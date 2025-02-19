@@ -16,60 +16,54 @@
         theme.default.input,
         theme.default.borderRadius,
         {
-          'mb-2': index !== options.length,
           '!ring-red-500 !ring-2 !border-transparent': hasError,
-          '!cursor-not-allowed !bg-gray-200': disabled,
+          '!cursor-not-allowed !bg-gray-200 dark:!bg-gray-800': disabled,
         },
       ]"
     >
-    <template
-      v-if="options && options.length"
-    >
-     <div
-        v-for="(option) in options"
-        :key="option[optionKey]"
-        :role="multiple?'checkbox':'radio'"
-        :aria-checked="isSelected(option[optionKey])"
-        :class="[
-          theme.FlatSelectInput.spacing.vertical,
-          theme.FlatSelectInput.fontSize,
-          theme.FlatSelectInput.option,
-        ]"
-        @click="onSelect(option[optionKey])"
+      <template
+        v-if="options && options.length"
       >
-        <template v-if="multiple">
-          <Icon
-            v-if="isSelected(option[optionKey])"
-            name="material-symbols:check-box"
-            class="text-inherit"
-            :color="color"
-            :class="[theme.FlatSelectInput.icon]"
-          />
-          <Icon
-            v-else
-            name="material-symbols:check-box-outline-blank"
-            :class="[theme.FlatSelectInput.icon,theme.FlatSelectInput.unselectedIcon]"
-          />
-        </template>
-        <template v-else>
-          <Icon
-            v-if="isSelected(option[optionKey])"
-            name="material-symbols:radio-button-checked-outline"
-            class="text-inherit"
-            :color="color"
-            :class="[theme.FlatSelectInput.icon]"
-          />
-          <Icon
-            v-else
-            name="material-symbols:radio-button-unchecked"
-            :class="[theme.FlatSelectInput.icon,theme.FlatSelectInput.unselectedIcon]"
-          />
-        </template>
-        <p class="flex-grow">
-          {{ option[displayKey] }}
-        </p>
-      </div>
-    </template>
+        <div
+          v-for="(option) in options"
+          :key="option[optionKey]"
+          :role="multiple?'checkbox':'radio'"
+          :aria-checked="isSelected(option[optionKey])"
+          :class="[
+            theme.FlatSelectInput.spacing.vertical,
+            theme.FlatSelectInput.fontSize,
+            theme.FlatSelectInput.option,
+            {
+              '!cursor-not-allowed !bg-gray-200 dark:!bg-gray-800': disableOptions.includes(option[optionKey]),
+            },
+          ]"
+          @click="onSelect(option[optionKey])"
+        >
+          <template v-if="multiple">
+            <CheckboxIcon
+              :is-checked="isSelected(option[optionKey])"
+              :color="color"
+              :theme="theme"
+            />
+          </template>
+          <template v-else>
+            <RadioButtonIcon
+              :is-checked="isSelected(option[optionKey])"
+              :color="color"
+              :theme="theme"
+            />
+          </template>
+          <UTooltip
+            :text="disableOptionsTooltip"
+            :prevent="!disableOptions.includes(option[optionKey])"
+            class="w-full"
+          >
+            <p class="flex-grow">
+              {{ option[displayKey] }}
+            </p>
+          </UTooltip>
+        </div>
+      </template>
       <div
         v-else
         :class="[
@@ -80,7 +74,7 @@
           '!text-gray-500 !cursor-not-allowed'
         ]"
       >
-        No options available.
+        {{ $t('forms.select.noOptionAvailable') }}
       </div>
     </div>
 
@@ -96,13 +90,15 @@
 <script>
 import {inputProps, useFormInput} from "./useFormInput.js"
 import InputWrapper from "./components/InputWrapper.vue"
+import RadioButtonIcon from "./components/RadioButtonIcon.vue"
+import CheckboxIcon from "./components/CheckboxIcon.vue"
 
 /**
  * Options: {name,value} objects
  */
 export default {
   name: "FlatSelectInput",
-  components: {InputWrapper},
+  components: {InputWrapper, RadioButtonIcon, CheckboxIcon},
 
   props: {
     ...inputProps,
@@ -111,7 +107,10 @@ export default {
     emitKey: {type: String, default: "value"},
     displayKey: {type: String, default: "name"},
     loading: {type: Boolean, default: false},
-    multiple: {type: Boolean, default: false},
+    multiple: { type: Boolean, default: false },
+    disableOptions: { type: Array, default: () => [] },
+    disableOptionsTooltip: { type: String, default: "Not allowed" },
+    clearable: { type: Boolean, default: false },
   },
   setup(props, context) {
     return {
@@ -124,18 +123,18 @@ export default {
   computed: {},
   methods: {
     onSelect(value) {
-      if (this.disabled) {
+      if (this.disabled || this.disableOptions.includes(value)) {
         return
       }
 
       if (this.multiple) {
         const emitValue = Array.isArray(this.compVal) ? [...this.compVal] : []
 
-        // Already in value, remove it
+        // Already in value, remove it only if clearable or not the last item
         if (this.isSelected(value)) {
-          this.compVal = emitValue.filter((item) => {
-            return item !== value
-          })
+          if (this.clearable || emitValue.length > 1) {
+            this.compVal = emitValue.filter((item) => item !== value)
+          }
           return
         }
 
@@ -143,7 +142,10 @@ export default {
         emitValue.push(value)
         this.compVal = emitValue
       } else {
-        this.compVal = this.compVal === value ? null : value
+        // For single select, only change value if it's different or clearable
+        if (this.compVal !== value || this.clearable) {
+          this.compVal = this.compVal === value && this.clearable ? null : value
+        }
       }
     },
     isSelected(value) {

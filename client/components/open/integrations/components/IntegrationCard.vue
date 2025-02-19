@@ -3,7 +3,7 @@
     class="text-gray-500 border shadow rounded-md p-5 mt-4 relative flex items-center"
   >
     <div
-      class="flex items-center"
+      class="flex items-center w-full md:max-w-[240px]"
       :class="{'flex-grow': !actionsComponent}"
     >
       <div
@@ -203,7 +203,7 @@ const showIntegrationEventsModal = ref(false)
 const loadingDelete = ref(false)
 
 const actionsComponent = computed(() => {
-  if(integrationTypeInfo.value.actions_file_name) {
+  if(integrationTypeInfo.value?.actions_file_name || false) {
     return resolveComponent(integrationTypeInfo.value.actions_file_name)
   }
 

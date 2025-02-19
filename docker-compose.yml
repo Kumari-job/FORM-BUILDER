@@ -1,64 +1,108 @@
 ---
 services:
-  api: &api
+  api: &api-environment
     image: jhumanj/opnform-api:latest
-    environment:
+    container_name: opnform-api
+    build: &api-build
+      context: .
+      dockerfile: docker/Dockerfile.api
+      args:
+        APP_ENV: production
+        COMPOSER_FLAGS: --no-dev
+    volumes: &api-environment-volumes
+      - ./api/storage:/usr/share/nginx/html/storage:rw
+    environment: &api-env
+      APP_ENV: production
+      IS_API_WORKER: "false"
+      # Database settings
       DB_HOST: db
       REDIS_HOST: redis
-
       DB_DATABASE: ${DB_DATABASE:-forge}
       DB_USERNAME: ${DB_USERNAME:-forge}
       DB_PASSWORD: ${DB_PASSWORD:-forge}
       DB_CONNECTION: ${DB_CONNECTION:-pgsql}
-      AWS_ENDPOINT: http://minio:9000
-      AWS_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY:-minio}
-      AWS_SECRET_ACCESS_KEY: ${MINIO_SECRET_KEY:-minio123}
+      # Storage settings
       FILESYSTEM_DISK: local
-      AWS_REGION: eu-west-1
-      AWS_BUCKET: laravel-bucket
       LOCAL_FILESYSTEM_VISIBILITY: public
-      FRONT_URL: ${FRONT_URL:-http://localhost}
-    env_file: ./.env
-    volumes:
-      - laravel-persist:/persist
-      - ./storage/logs:/usr/share/nginx/html/storage/logs
+    env_file: 
+      - ./api/.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   api-worker:
-    <<: *api
-    command: ./artisan queue:work
-    volumes:
-      - ./storage/logs:/usr/share/nginx/html/storage/logs
+    <<: *api-environment
+    container_name: opnform-api-worker
+    build: *api-build
+    command: ["php", "artisan", "queue:work"]
+    volumes: *api-environment-volumes
+    environment:
+      <<: *api-env
+      APP_ENV: production
+      IS_API_WORKER: "true"
+    env_file: 
+      - ./api/.env
+
+  api-scheduler:
+    <<: *api-environment
+    container_name: opnform-api-scheduler
+    build: *api-build
+    command: ["php", "artisan", "schedule:work"]
+    volumes: *api-environment-volumes
+    environment:
+      <<: *api-env
+      APP_ENV: production
+      IS_API_WORKER: "true"
+      # Scheduler settings
+      CONTAINER_ROLE: scheduler
+      PHP_MEMORY_LIMIT: 512M
+      PHP_MAX_EXECUTION_TIME: 60
+    env_file: 
+      - ./api/.env
 
   ui:
     image: jhumanj/opnform-client:latest
-    environment:
-      NUXT_PUBLIC_APP_URL: ${NUXT_PUBLIC_APP_URL:-/}
-      NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE:-/api}
-      NUXT_PRIVATE_API_BASE: http://ingress/api
+    container_name: opnform-client
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.client
     env_file: 
       - ./client/.env
-    volumes:
-      - ./client/.env:/app/.env
 
   redis:
     image: redis:7
+    container_name: opnform-redis
 
   db:
     image: postgres:16
+    container_name: opnform-db
     environment:
       POSTGRES_DB: ${DB_DATABASE:-forge}
       POSTGRES_USER: ${DB_USERNAME:-forge}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-forge}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-forge}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
   ingress:
     image: nginx:1
+    container_name: opnform-ingress
     volumes:
       - ./docker/nginx.conf:/etc/nginx/templates/default.conf.template
     ports:
       - 80:80
+    depends_on:
+      api:
+        condition: service_started
+      ui:
+        condition: service_started
 
 volumes:
-  laravel-persist:
   postgres-data:
+  opnform_storage:

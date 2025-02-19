@@ -32,8 +32,6 @@ function redirectToMainDomain(details = {}) {
 export default defineNuxtRouteMiddleware((to) => {
   if (!customDomainUsed()) return
 
-  const config = useRuntimeConfig()
-
   const customDomainHeaderValue = useRequestHeaders()[customDomainHeaderName]
   if (
     import.meta.server &&
@@ -47,7 +45,7 @@ export default defineNuxtRouteMiddleware((to) => {
     })
   }
 
-  if (!config.public.customDomainsEnabled) {
+  if (!useFeatureFlag('custom_domains')) {
     // If custom domain not allowed, redirect
     return redirectToMainDomain({
       reason: "custom_domains_disabled",

@@ -28,7 +28,8 @@ export const inputProps = {
   help: {type: String, default: null},
   helpPosition: {type: String, default: "below_input"},
   color: {type: String, default: "#3B82F6"},
-  wrapperClass: {type: String, default: ""},
+  wrapperClass: { type: String, default: "" },
+  locale: { type: String, default: "en" },
 }
 
 export function useFormInput(props, context, options = {}) {
@@ -88,6 +89,14 @@ export function useFormInput(props, context, options = {}) {
     return wrapperProps
   })
 
+  const onFocus = (event) => {
+    context.emit('focus', event)
+  }
+
+  const onBlur = (event) => {
+    context.emit('blur', event)
+  }
+
   // Watch for changes in props.modelValue and update the local content
   watch(
     () => props.modelValue,
@@ -104,5 +113,7 @@ export function useFormInput(props, context, options = {}) {
     hasValidation,
     hasError,
     inputWrapperProps,
+    onFocus,
+    onBlur,
   }
 }

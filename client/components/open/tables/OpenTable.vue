@@ -7,7 +7,7 @@
     <thead
       :id="'table-header-' + tableHash"
       ref="header"
-      class="n-table-head top-0"
+      class="n-table-head top-0 z-10"
       :class="{ absolute: data.length !== 0 }"
       style="will-change: transform; transform: translate3d(0px, 0px, 0px)"
     >
@@ -18,7 +18,7 @@
           :key="col.id"
           scope="col"
           :allow-resize="allowResize"
-          :width="col.cell_width ? col.cell_width + 'px' : 'auto'"
+          :width="col.width ? col.width + 'px' : '150px'"
           class="n-table-cell p-0 relative"
           @resize-width="resizeCol(col, $event)"
         >
@@ -29,6 +29,7 @@
           </p>
         </resizable-th>
         <th
+          v-if="hasActions"
           class="n-table-cell p-0 relative"
           style="width: 100px"
         >
@@ -67,12 +68,13 @@
         <td
           v-for="(col, colIndex) in columns"
           :key="col.id"
-          :style="{ width: col.cell_width + 'px' }"
+          :style="{ width: col.width ? col.width + 'px' : '150px' }"
           class="n-table-cell border-gray-100 dark:border-gray-900 text-sm p-2 overflow-hidden"
           :class="[
             {
               'border-b': index !== data.length - 1,
               'border-r': colIndex !== columns.length - 1 || hasActions,
+              'whitespace-normal break-words': wrapColumns[col.id] === true,
             },
             colClasses(col),
           ]"
@@ -89,13 +91,15 @@
           class="n-table-cell border-gray-100 dark:border-gray-900 text-sm p-2 border-b"
           style="width: 100px"
         >
-          <record-operations
-            :form="form"
-            :structure="columns"
-            :submission="row"
-            @deleted="(submission) => $emit('deleted', submission)"
-            @updated="(submission) => $emit('updated', submission)"
-          />
+          <div class="flex justify-center">
+            <record-operations
+              :form="form"
+              :structure="columns"
+              :submission="row"
+              @deleted="(submission) => $emit('deleted', submission)"
+              @updated="(submission) => $emit('updated', submission)"
+            />
+          </div>
         </td>
       </tr>
       <tr
@@ -140,6 +144,7 @@
 import OpenText from "./components/OpenText.vue"
 import OpenUrl from "./components/OpenUrl.vue"
 import OpenSelect from "./components/OpenSelect.vue"
+import OpenMatrix from "./components/OpenMatrix.vue"
 import OpenDate from "./components/OpenDate.vue"
 import OpenFile from "./components/OpenFile.vue"
 import OpenCheckbox from "./components/OpenCheckbox.vue"
@@ -156,6 +161,10 @@ export default {
       type: Array,
       default: () => [],
     },
+    wrapColumns: {
+      type: Object,
+      default: () => {},
+    },
     data: {
       type: Array,
       default: () => [],
@@ -170,7 +179,8 @@ export default {
       type: Boolean,
     },
     scrollParent: {
-      type: [Boolean]
+      type: [Boolean, Object],
+      default: null
     },
   },
   emits: ["updated", "deleted", "resize", "update-columns"],
@@ -180,6 +190,8 @@ export default {
     return {
       workingFormStore,
       form: storeToRefs(workingFormStore).content,
+      user: useAuthStore().user,
+      workspace: useWorkspacesStore().getCurrent,
     }
   },
 
@@ -187,16 +199,17 @@ export default {
     return {
       tableHash: null,
       skip: false,
-      hasActions: true,
       internalColumns: [],
       rafId: null,
       fieldComponents: {
         text: shallowRef(OpenText),
+        rich_text: shallowRef(OpenText),
         number: shallowRef(OpenText),
         rating: shallowRef(OpenText),
         scale: shallowRef(OpenText),
         slider: shallowRef(OpenText),
         select: shallowRef(OpenSelect),
+        matrix: shallowRef(OpenMatrix),
         multi_select: shallowRef(OpenSelect),
         date: shallowRef(OpenDate),
         files: shallowRef(OpenFile),
@@ -210,6 +223,9 @@ export default {
   },
 
   computed: {
+    hasActions() {
+      return !this.workspace.is_readonly
+    },
     formData() {
       return [...this.data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     }
@@ -279,7 +295,7 @@ export default {
       if (this.internalColumns) {
         this.$nextTick(() => {
           this.internalColumns.forEach((col) => {
-            if (!_has(col, "cell_width")) {
+            if (!_has(col, "width")) {
               if (
                 this.allowResize &&
                 this.internalColumns.length &&
@@ -300,7 +316,7 @@ export default {
     resizeCol(col, width) {
       if (!this.form) return
       const index = this.internalColumns.findIndex((c) => c.id === col.id)
-      this.internalColumns[index].cell_width = width
+      this.internalColumns[index].width = width
       this.setColumns(this.internalColumns)
       this.$nextTick(() => {
         this.$emit("resize")

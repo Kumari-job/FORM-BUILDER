@@ -12,9 +12,9 @@
     >
       <v-select
         v-model="selectedCountryCode"
-        class="w-[130px]"
+        :class="theme.PhoneInput.countrySelectWidth"
         dropdown-class="max-w-[300px]"
-        input-class="rounded-r-none"
+        input-class="ltr-only:rounded-r-none rtl:!rounded-l-none"
         :data="countries"
         :disabled="disabled || countries.length === 1 ? true : null"
         :searchable="true"
@@ -41,30 +41,31 @@
         <template #selected="props">
           <div
             class="flex items-center space-x-2 justify-center overflow-hidden"
+            :class="theme.PhoneInput.maxHeight"
           >
             <country-flag
               size="normal"
               class="!-mt-[9px] rounded"
               :country="props.option.code"
             />
-            <span>{{ props.option.dial_code }}</span>
+            <span class="text-sm">{{ props.option.dial_code }}</span>
           </div>
         </template>
       </v-select>
       <input
         v-model="inputVal"
         type="text"
-        class="inline-flex-grow !border-l-0 !rounded-l-none"
+        class="inline-flex-grow ltr-only:border-l-0 ltr-only:!rounded-l-none rtl:border-r-0 rtl:rounded-r-none"
         :disabled="disabled ? true : null"
         :class="[
-          theme.default.input,
-          theme.default.spacing.horizontal,
-          theme.default.spacing.vertical,
-          theme.default.fontSize,
-          theme.default.borderRadius,
+          theme.PhoneInput.input,
+          theme.PhoneInput.spacing.horizontal,
+          theme.PhoneInput.spacing.vertical,
+          theme.PhoneInput.fontSize,
+          theme.PhoneInput.borderRadius,
           {
             '!ring-red-500 !ring-2': hasError,
-            '!cursor-not-allowed !bg-gray-200': disabled,
+            '!cursor-not-allowed !bg-gray-200 dark:!bg-gray-800': disabled,
           },
         ]"
         :placeholder="placeholder"
@@ -123,6 +124,8 @@ export default {
   watch: {
     inputVal: {
       handler(val) {
+        if (!this.selectedCountryCode) return
+        
         if (val && val.startsWith("0")) {
           val = val.substring(1)
         }

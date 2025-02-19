@@ -2,13 +2,16 @@
   <div
     v-if="!isFieldHidden"
     :id="'block-' + field.id"
+    ref="form-block"
     class="px-2"
     :class="[
       getFieldWidthClasses(field),
       {
-        'group/nffield hover:bg-gray-100/50 relative hover:z-10 transition-colors hover:border-gray-200 dark:hover:bg-gray-900 border-dashed border border-transparent box-border dark:hover:border-blue-900 rounded-md':adminPreview,
+        'group/nffield hover:bg-gray-100/50 relative hover:z-10 transition-colors hover:border-gray-200 dark:hover:!bg-gray-900 border-dashed border border-transparent box-border dark:hover:border-blue-900 rounded-md': adminPreview,
+        'cursor-pointer':workingFormStore.showEditFieldSidebar && adminPreview,
         'bg-blue-50 hover:!bg-blue-50 dark:bg-gray-800 rounded-md': beingEdited,
       }]"
+    @click="setFieldAsSelected"
   >
     <div
       class="-m-[1px] w-full max-w-full mx-auto"
@@ -16,14 +19,13 @@
     >
       <div
         v-if="adminPreview"
-        class="absolute -translate-x-full -left-1 top-1 bottom-0 hidden group-hover/nffield:block"
+        class="absolute translate-y-full lg:translate-y-0 -bottom-1 left-1/2 -translate-x-1/2 lg:-translate-x-full lg:-left-1 lg:top-1 lg:bottom-0 hidden group-hover/nffield:block"
       >
         <div
-          class="flex flex-col -space-1 bg-white rounded-md shadow -mt-1"
-          :class="{ 'lg:flex-row lg:-space-x-2': !fieldSideBarOpened, 'xl:flex-row xl:-space-x-1': fieldSideBarOpened }"
+          class="flex lg:flex-col bg-gray-100 dark:bg-gray-800 border rounded-md"
         >
           <div
-            class="p-1 -mb-2 text-gray-300 hover:text-blue-500 cursor-pointer"
+            class="p-1 lg:pt-0 -mb-2 hover:text-blue-500 cursor-pointer text-gray-400 dark:text-gray-500 dark:border-gray-500"
             role="button"
             @click.prevent="openAddFieldSidebar"
           >
@@ -33,12 +35,22 @@
             />
           </div>
           <div
-            class="p-1 text-gray-300 hover:text-blue-500 cursor-pointer text-center"
+            class="p-1 lg:pt-0 hover:text-blue-500 cursor-pointer flex items-center justify-center text-center text-gray-400 dark:text-gray-500 dark:border-gray-500"
             role="button"
             @click.prevent="editFieldOptions"
           >
             <Icon
               name="heroicons:cog-8-tooth-20-solid"
+              class="w-5 h-5"
+            />
+          </div>
+          <div
+            class="p-1 pt-0 hover:text-blue-500 mt-1 cursor-pointer flex items-center justify-center text-center text-gray-400 dark:text-gray-500 dark:border-gray-500"
+            role="button"
+            @click.prevent="removeField"
+          >
+            <Icon
+              name="heroicons:trash-20-solid"
               class="w-5 h-5"
             />
           </div>
@@ -56,7 +68,7 @@
           v-if="field.type === 'nf-text' && field.content"
           :id="field.id"
           :key="field.id"
-          class="nf-text w-full mb-3"
+          class="nf-text w-full my-1.5"
           :class="[getFieldAlignClasses(field)]"
           v-html="field.content"
         />
@@ -64,7 +76,7 @@
           v-if="field.type === 'nf-code' && field.content"
           :id="field.id"
           :key="field.id"
-          class="nf-code w-full px-2 mb-3"
+          class="nf-code w-full px-2 my-1.5"
           v-html="field.content"
         />
         <div
@@ -79,24 +91,33 @@
           :key="field.id"
           class="my-4 w-full px-2"
           :class="[getFieldAlignClasses(field)]"
+          @dblclick="editFieldOptions"
         >
           <div
             v-if="!field.image_block"
-            class="p-4 border border-dashed"
+            class="p-4 border border-dashed text-center"
           >
-            Open <b>{{ field.name }}'s</b> block settings to upload image.
+            <a
+              href="#"
+              class="text-blue-800 dark:text-blue-200"
+              @click.prevent="editFieldOptions"
+            >Open block settings to upload image.</a>
           </div>
           <img
             v-else
             :alt="field.name"
             :src="field.image_block"
-            class="max-w-full"
+            class="max-w-full inline-block"
             :class="theme.default.borderRadius"
           >
         </div>
       </template>
-      <div class="hidden group-hover/nffield:flex translate-x-full absolute right-0 top-0 h-full w-5 flex-col justify-center pl-1 pt-3">
-        <div class="flex items-center bg-gray-100 dark:bg-gray-800 border rounded-md h-12 text-gray-500 dark:text-gray-400 dark:border-gray-500 cursor-grab handle">
+      <div
+        class="hidden group-hover/nffield:flex translate-x-full absolute right-0 top-0 h-full w-5 flex-col justify-center pl-1 pt-3"
+      >
+        <div
+          class="flex items-center bg-gray-100 dark:bg-gray-800 border rounded-md h-12 text-gray-500 dark:text-gray-400 dark:border-gray-500 cursor-grab handle min-h-[40px]"
+        >
           <Icon
             name="clarity:drag-handle-line"
             class="h-6 w-6 -ml-1 block shrink-0"
@@ -153,7 +174,7 @@ export default {
     adminPreview: {type: Boolean, default: false} // If used in FormEditorPreview
   },
 
-  setup(props) {
+  setup() {
     const workingFormStore = useWorkingFormStore()
     return {
       workingFormStore,
@@ -189,6 +210,7 @@ export default {
       }
       return {
         text: 'TextInput',
+        rich_text: 'RichTextAreaInput',
         number: 'TextInput',
         rating: 'RatingInput',
         scale: 'ScaleInput',
@@ -200,7 +222,9 @@ export default {
         checkbox: 'CheckboxInput',
         url: 'TextInput',
         email: 'TextInput',
-        phone_number: 'TextInput'
+        phone_number: 'TextInput',
+        matrix: 'MatrixInput',
+        barcode: 'BarcodeInput'
       }[field.type]
     },
     isPublicFormPage() {
@@ -250,10 +274,20 @@ export default {
 
   methods: {
     editFieldOptions() {
+      if (!this.adminPreview) return
+      this.workingFormStore.openSettingsForField(this.field)
+    },
+    setFieldAsSelected () {
+      if (!this.adminPreview || !this.workingFormStore.showEditFieldSidebar) return
       this.workingFormStore.openSettingsForField(this.field)
     },
     openAddFieldSidebar() {
+      if (!this.adminPreview) return
       this.workingFormStore.openAddFieldSidebar(this.field)
+    },
+    removeField () {
+      if (!this.adminPreview)  return
+      this.workingFormStore.removeField(this.field)
     },
     getFieldWidthClasses(field) {
       if (!field.width || field.width === 'full') return 'col-span-full'
@@ -294,9 +328,23 @@ export default {
         helpPosition: (field.help_position) ? field.help_position : 'below_input',
         uppercaseLabels: this.form.uppercase_labels == 1 || this.form.uppercase_labels == true,
         theme: this.theme,
-        maxCharLimit: (field.max_char_limit) ? parseInt(field.max_char_limit) : 2000,
+        maxCharLimit: (field.max_char_limit) ? parseInt(field.max_char_limit) : null,
         showCharLimit: field.show_char_limit || false,
-        isDark: this.darkMode
+        isDark: this.darkMode,
+        locale: (this.form?.language) ? this.form.language : 'en'
+      }
+
+      if (field.type === 'matrix') {
+        inputProperties.rows = field.rows
+        inputProperties.columns = field.columns
+      }
+
+      if (field.type === 'barcode') {
+        inputProperties.decoders = field.decoders
+      }
+
+      if (['select','multi_select'].includes(field.type) && !this.isFieldRequired) {
+        inputProperties.clearable = true
       }
 
       if (['select', 'multi_select'].includes(field.type)) {

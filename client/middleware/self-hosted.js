@@ -1,11 +1,9 @@
-export default defineNuxtRouteMiddleware((from, to, next) => {
-    const runtimeConfig = useRuntimeConfig()
-    const route = useRoute()
-    if (runtimeConfig.public?.selfHosted) {
-        if (from.name === 'register' && route.query?.email && route.query?.invite_token) {
+export default defineNuxtRouteMiddleware((from, to) => {
+    if (useFeatureFlag('self_hosted')) {
+        if (from.name === 'register' && to.query?.email && to.query?.invite_token) {
             return
         }
-        if (from.name === 'ai-form-builder' && runtimeConfig.public?.aiFeaturesEnabled) {
+        if (from.name === 'ai-form-builder' && useFeatureFlag('ai_features')) {
             return
         }
         return navigateTo({ name: "index" })

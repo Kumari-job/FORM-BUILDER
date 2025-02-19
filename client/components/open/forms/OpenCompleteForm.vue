@@ -2,7 +2,8 @@
   <div
     v-if="form"
     class="open-complete-form"
-    :style="{ '--font-family': form.font_family }"
+    :dir="form?.layout_rtl ? 'rtl' : 'ltr'"
+    :style="{ '--font-family': form.font_family, 'direction': form?.layout_rtl ? 'rtl' : 'ltr' }"
   >
     <link
       v-if="adminPreview && form.font_family"
@@ -10,21 +11,23 @@
       :href="getFontUrl"
     >
     
-    <h1
-      v-if="!isHideTitle"
-      class="mb-4 px-2"
-      :class="{'mt-4':isEmbedPopup}"
-      v-text="form.title"
-    />
-    <div
-      v-if="form.description"
-      class="form-description mb-4 text-gray-700 dark:text-gray-300 whitespace-pre-wrap px-2"
-      v-html="form.description"
-    />
+    <template v-if="!isHideTitle">
+      <EditableTag
+        v-if="adminPreview"
+        v-model="form.title"
+        element="h1"
+        class="mb-2"
+      />
+      <h1
+        v-else
+        class="mb-2 px-2"
+        v-text="form.title"
+      />
+    </template>
 
     <div v-if="isPublicFormPage && form.is_password_protected">
       <p class="form-description mb-4 text-gray-700 dark:text-gray-300 px-2">
-        This form is protected by a password.
+        {{ $t('forms.password_protected') }}
       </p>
       <div class="form-group flex flex-wrap w-full">
         <div class="relative mb-3 w-full px-2">
@@ -44,27 +47,26 @@
           class="my-4"
           @click="passwordEntered"
         >
-          Submit
+          {{ $t('forms.submit') }}
         </open-form-button>
       </div>
     </div>
 
-    <v-transition>
+    <v-transition name="fade">
       <div
         v-if="!form.is_password_protected && form.password && !hidePasswordDisabledMsg"
-        class="border shadow-sm p-2 my-4 flex items-center rounded-md bg-yellow-100 dark:bg-yellow-600/20 border-yellow-500 dark:border-yellow-500/20"
+        class="m-2 my-4 flex flex-grow items-end p-4 rounded-md dark:text-yellow-500 bg-yellow-50 dark:bg-yellow-600/20 dark:border-yellow-500"
       >
-        <div class="flex flex-grow">
-          <p class="mb-0 py-2 px-4 text-yellow-600 dark:text-yellow-600">
-            We disabled the password protection for this form because you are an owner of it.
-          </p>
-          <v-button
-            color="yellow"
-            @click="hidePasswordDisabledMsg=true"
-          >
-            OK
-          </v-button>
-        </div>
+        <p class="mb-0 text-yellow-600 dark:text-yellow-600 text-sm">
+          We disabled the password protection for this form because you are an owner of it.
+        </p>
+        <UButton
+          color="yellow"
+          size="xs"
+          @click="hidePasswordDisabledMsg = true"
+        >
+          Close
+        </ubutton>
       </div>
     </v-transition>
 
@@ -73,7 +75,7 @@
       class="border shadow-sm p-2 my-4 flex items-center rounded-md bg-yellow-100 dark:bg-yellow-600/20 border-yellow-500 dark:border-yellow-500/20"
     >
       <div class="flex-grow">
-        <p
+        <div
           class="mb-0 py-2 px-4 text-yellow-600"
           v-html="form.closed_text"
         />
@@ -100,22 +102,13 @@
       :specify-form-owner="true"
     />
 
-    <transition
-      v-if="!form.is_password_protected && (!isPublicFormPage || (!form.is_closed && !form.max_number_of_submissions_reached && form.visibility!='closed'))"
-      enter-active-class="duration-500 ease-out"
-      enter-from-class="translate-x-full opacity-0"
-      enter-to-class="translate-x-0 opacity-100"
-      leave-active-class="duration-500 ease-in"
-      leave-from-class="translate-x-0 opacity-100"
-      leave-to-class="translate-x-full opacity-0"
-      mode="out-in"
-    >
+    <v-transition name="fade">
       <div
         v-if="!submitted"
         key="form"
       >
         <open-form
-          v-if="form"
+          v-if="form && !form.is_closed"
           :form="form"
           :loading="loading"
           :fields="form.properties"
@@ -124,14 +117,14 @@
           :admin-preview="adminPreview"
           @submit="submitForm"
         >
-          <template #submit-btn="{submitForm}">
+          <template #submit-btn="{submitForm: handleSubmit}">
             <open-form-button
               :loading="loading"
               :theme="theme"
               :color="form.color"
               class="mt-2 px-8 mx-1"
               :class="submitButtonClass"
-              @click.prevent="submitForm"
+              @click.prevent="handleSubmit"
             >
               {{ form.submit_button_text }}
             </open-form-button>
@@ -146,7 +139,7 @@
             class="text-gray-400 hover:text-gray-500 dark:text-gray-600 dark:hover:text-gray-500 cursor-pointer hover:underline text-xs"
             target="_blank"
           >
-            Powered by <span class="font-semibold">OpnForm</span>
+            {{ $t('forms.powered_by') }} <span class="font-semibold">{{ $t('app.name') }}</span>
           </a>
         </p>
       </div>
@@ -155,9 +148,13 @@
         key="submitted"
         class="px-2"
       >
-        <p
+        <TextBlock
+          v-if="form.submitted_text"
           class="form-description text-gray-700 dark:text-gray-300 whitespace-pre-wrap"
-          v-html="form.submitted_text "
+          :content="form.submitted_text"
+          :mentions-allowed="true"
+          :form="form"
+          :form-data="submittedData"
         />
         <open-form-button
           v-if="form.re_fillable"
@@ -189,26 +186,31 @@
             href="https://opnform.com/?utm_source=form&utm_content=create_form_free"
             class="text-nt-blue hover:underline"
           >
-            Create your form for free with OpnForm
+            {{ $t('forms.create_form_free') }}
           </a>
         </p>
       </div>
-    </transition>
+    </v-transition>
+    <FirstSubmissionModal
+      :show="showFirstSubmissionModal"
+      :form="form"
+      @close="showFirstSubmissionModal=false"
+    />
   </div>
 </template>
 
 <script>
 import OpenForm from './OpenForm.vue'
 import OpenFormButton from './OpenFormButton.vue'
-import VButton from '~/components/global/VButton.vue'
 import FormCleanings from '../../pages/forms/show/FormCleanings.vue'
 import VTransition from '~/components/global/transitions/VTransition.vue'
 import {pendingSubmission} from "~/composables/forms/pendingSubmission.js"
 import clonedeep from "clone-deep"
 import ThemeBuilder from "~/lib/forms/themes/ThemeBuilder.js"
+import FirstSubmissionModal from '~/components/open/forms/components/FirstSubmissionModal.vue'
 
 export default {
-  components: { VTransition, VButton, OpenFormButton, OpenForm, FormCleanings },
+  components: { VTransition, OpenFormButton, OpenForm, FormCleanings, FirstSubmissionModal },
 
   props: {
     form: { type: Object, required: true },
@@ -221,8 +223,16 @@ export default {
     }
   },
 
+  emits: ['submitted', 'password-entered', 'restarted'],
+
   setup(props) {
+    const { setLocale } = useI18n()
+    const authStore = useAuthStore()
+    
     return {
+      setLocale,
+      authStore,
+      authenticated: computed(() => authStore.check),
       isIframe: useIsIframe(),
       pendingSubmission: pendingSubmission(props.form),
       confetti: useConfetti()
@@ -237,7 +247,9 @@ export default {
         password: null
       }),
       hidePasswordDisabledMsg: false,
-      submissionId: false
+      submissionId: false,
+      submittedData: null,
+      showFirstSubmissionModal: false
     }
   },
 
@@ -261,7 +273,21 @@ export default {
       if(!this.form || !this.form.font_family) return null
       const family = this.form?.font_family.replace(/ /g, '+')
       return `https://fonts.googleapis.com/css?family=${family}:wght@400,500,700,800,900&display=swap`
+    },
+    isFormOwner() {
+      return this.authenticated && this.form && this.form.creator_id === this.authStore.user.id
     }
+  },
+  watch: {
+    'form.language': {
+      handler(newLanguage) {
+        this.setLocale(newLanguage)
+      },
+      immediate: true
+    }
+  },
+  beforeUnmount() {
+    this.setLocale('en')
   },
 
   methods: {
@@ -274,8 +300,9 @@ export default {
 
       if (form.busy) return
       this.loading = true
-      // this.closeAlert()
+
       form.post('/forms/' + this.form.slug + '/answer').then((data) => {
+        this.submittedData = form.data()
         useAmplitude().logEvent('form_submission', {
           workspace_id: this.form.workspace_id,
           form_id: this.form.id
@@ -288,7 +315,8 @@ export default {
             id: this.form.id,
             redirect_target_url: (this.form.is_pro && data.redirect && data.redirect_url) ? data.redirect_url : null
           },
-          submission_data: form.data()
+          submission_data: form.data(),
+          completion_time: form['completion_time']
         })
 
         if (this.isIframe) {
@@ -296,6 +324,7 @@ export default {
         }
         window.postMessage(payload, '*')
         this.pendingSubmission.remove()
+        this.pendingSubmission.removeTimer()
 
         if (data.redirect && data.redirect_url) {
           window.location.href = data.redirect_url
@@ -304,7 +333,9 @@ export default {
         if (data.submission_id) {
           this.submissionId = data.submission_id
         }
-
+        if (this.isFormOwner && !this.isIframe && data?.is_first_submission) {
+          this.showFirstSubmissionModal = true
+        }
         this.loading = false
         this.submitted = true
         this.$emit('submitted', true)
@@ -330,7 +361,7 @@ export default {
       if (this.passwordForm.password !== '' && this.passwordForm.password !== null) {
         this.$emit('password-entered', this.passwordForm.password)
       } else {
-        this.addPasswordError('The Password field is required.')
+        this.addPasswordError(this.$t('forms.password_required'))
       }
     },
     addPasswordError (msg) {

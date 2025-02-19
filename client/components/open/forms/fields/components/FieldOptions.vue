@@ -1,47 +1,33 @@
 <template>
   <div
     v-if="field"
-    class="py-2"
+    class="pb-2"
   >
     <!-- General -->
-    <div class="border-b px-4">
-      <h3 class="font-semibold block text-lg">
-        General
-      </h3>
-      <p class="text-gray-400 mb-2 text-xs">
-        Exclude this field or make it required.
-      </p>
-      <toggle-switch-input
+    <div class="px-4">
+      <text-input
+        name="name"
+        class="mt-2"
         :form="field"
-        name="required"
-        label="Required"
-        @update:model-value="onFieldRequiredChange"
+        :required="true"
+        wrapper-class="mb-2"
+        label="Field Name"
       />
-      <toggle-switch-input
-        :form="field"
-        name="hidden"
-        label="Hidden"
-        @update:model-value="onFieldHiddenChange"
-      />
-      <toggle-switch-input
-        :form="field"
-        name="disabled"
-        label="Disabled"
-        @update:model-value="onFieldDisabledChange"
+      <HiddenRequiredDisabled
+        class="mt-4"
+        :field="field"
       />
     </div>
 
     <!-- Checkbox -->
     <div
       v-if="field.type === 'checkbox'"
-      class="border-b py-2 px-4"
+      class="px-4"
     >
-      <h3 class="font-semibold block text-lg">
-        Checkbox
-      </h3>
-      <p class="text-gray-400 mb-3 text-xs">
-        Advanced options for checkbox.
-      </p>
+      <EditorSectionHeader
+        icon="i-heroicons-check-circle"
+        title="Checkbox"
+      />
       <toggle-switch-input
         :form="field"
         name="use_toggle_switch"
@@ -53,11 +39,12 @@
     <!-- File Uploads -->
     <div
       v-if="field.type === 'files'"
-      class="border-b py-2 px-4"
+      class="px-4"
     >
-      <h3 class="font-semibold block text-lg mb-3">
-        File uploads
-      </h3>
+      <EditorSectionHeader
+        icon="i-heroicons-paper-clip"
+        title="File uploads"
+      />
       <toggle-switch-input
         :form="field"
         name="multiple"
@@ -90,16 +77,35 @@
       />
     </div>
 
+    <!-- Barcode Reader -->
+    <div
+      v-if="field.type === 'barcode'"
+      class="px-4"
+    >
+      <EditorSectionHeader
+        icon="i-material-symbols-barcode-scanner-rounded"
+        title="Barcode Reader"
+      />
+      <select-input
+        name="decoders"
+        class="mt-4"
+        :form="field"
+        :options="barcodeDecodersOptions"
+        label="Decoders"
+        :searchable="true"
+        :multiple="true"
+        help="Select the decoders you want to use"
+      />
+    </div>
+
     <div
       v-if="field.type === 'rating'"
-      class="border-b py-2 px-4"
+      class="px-4"
     >
-      <h3 class="font-semibold block text-lg">
-        Rating
-      </h3>
-      <p class="text-gray-400 mb-3 text-xs">
-        Advanced options for rating.
-      </p>
+      <EditorSectionHeader
+        icon="i-heroicons-star"
+        title="Rating"
+      />
       <text-input
         name="rating_max_value"
         native-type="number"
@@ -113,14 +119,12 @@
 
     <div
       v-if="field.type === 'scale'"
-      class="border-b py-2 px-4"
+      class="px-4"
     >
-      <h3 class="font-semibold block text-lg">
-        Scale
-      </h3>
-      <p class="text-gray-400 mb-3 text-xs">
-        Advanced options for scale.
-      </p>
+      <EditorSectionHeader
+        icon="i-heroicons-scale-20-solid"
+        title="Scale"
+      />
       <text-input
         name="scale_min_value"
         native-type="number"
@@ -151,14 +155,12 @@
 
     <div
       v-if="field.type === 'slider'"
-      class="border-b py-2 px-4"
+      class="px-4"
     >
-      <h3 class="font-semibold block text-lg">
-        Slider
-      </h3>
-      <p class="text-gray-400 mb-3 text-xs">
-        Advanced options for slider.
-      </p>
+      <EditorSectionHeader
+        icon="i-heroicons-adjustments-horizontal"
+        title="Slider"
+      />
       <text-input
         name="slider_min_value"
         native-type="number"
@@ -187,17 +189,20 @@
       />
     </div>
 
+    <MatrixFieldOptions
+      :model-value="field"
+      @update:model-value="field = $event"
+    />
+
     <!--   Text Options   -->
     <div
       v-if="field.type === 'text' && displayBasedOnAdvanced"
-      class="border-b py-2 px-4"
+      class="px-4"
     >
-      <h3 class="font-semibold block text-lg">
-        Text Options
-      </h3>
-      <p class="text-gray-400 mb-3 text-xs">
-        Keep it simple or make it a multi-lines input.
-      </p>
+      <EditorSectionHeader
+        icon="i-heroicons-bars-3-bottom-left"
+        title="Text Options"
+      />
       <toggle-switch-input
         :form="field"
         name="multi_lines"
@@ -216,16 +221,17 @@
     <!--   Date Options   -->
     <div
       v-if="field.type === 'date'"
-      class="border-b py-2 px-4"
+      class="px-4"
     >
-      <h3 class="font-semibold block text-lg">
-        Date Options
-      </h3>
+      <EditorSectionHeader
+        icon="i-heroicons-calendar-20-solid"
+        title="Date Options"
+      />
       <toggle-switch-input
         :form="field"
         class="mt-3"
         name="date_range"
-        label="End date"
+        label="Include end date"
         @update:model-value="onFieldDateRangeChange"
       />
       <toggle-switch-input
@@ -281,14 +287,12 @@
     <!-- select/multiselect Options   -->
     <div
       v-if="['select', 'multi_select'].includes(field.type)"
-      class="border-b py-2 px-4"
+      class="px-4"
     >
-      <h3 class="font-semibold block text-lg">
-        Select Options
-      </h3>
-      <p class="text-gray-400 mb-3 text-xs">
-        Advanced options for your select/multiselect fields.
-      </p>
+      <EditorSectionHeader
+        icon="i-heroicons-chevron-up-down-20-solid"
+        title="Select Options"
+      />
       <text-area-input
         v-model="optionsText"
         :name="field.id + '_options_text'"
@@ -315,22 +319,11 @@
     <!-- Customization - Placeholder, Prefill, Relabel, Field Help    -->
     <div
       v-if="displayBasedOnAdvanced"
-      class="border-b py-2 px-4"
+      class="px-4"
     >
-      <h3 class="font-semibold block text-lg">
-        Customization
-      </h3>
-
-      <p class="text-gray-400 mb-3 text-xs">
-        Change your form field name, pre-fill a value, add hints, etc.
-      </p>
-
-      <text-input
-        name="name"
-        class="mt-3"
-        :form="field"
-        :required="true"
-        label="Field Name"
+      <EditorSectionHeader
+        icon="i-heroicons-adjustments-horizontal"
+        title="Customization"
       />
 
       <toggle-switch-input
@@ -423,6 +416,15 @@
         label="Pre-filled value"
         :multiple="field.type === 'multi_select'"
       />
+      <template v-else-if="field.type === 'matrix'">
+        <MatrixInput
+          :form="field"
+          :rows="field.rows"
+          :columns="field.columns"
+          name="prefill"
+          label="Pre-filled value"
+        />
+      </template>
       <date-input
         v-else-if="field.type === 'date' && field.prefill_today !== true"
         name="prefill"
@@ -467,8 +469,15 @@
         :multiple="field.multiple === true"
         :move-to-form-assets="true"
       />
+      <rich-text-area-input
+        v-else-if="field.type === 'rich_text'"
+        name="prefill"
+        class="mt-3"
+        :form="field"
+        label="Pre-filled value"
+      />
       <text-input
-        v-else-if="!['files', 'signature'].includes(field.type)"
+        v-else-if="!['files', 'signature', 'rich_text'].includes(field.type)"
         name="prefill"
         class="mt-3"
         :form="field"
@@ -543,18 +552,18 @@
         @update:model-value="onFieldHelpPositionChange"
       />
 
-      <template v-if="['text', 'number', 'url', 'email'].includes(field.type)">
+      <template v-if="['text', 'rich_text', 'number', 'url', 'email'].includes(field.type)">
         <text-input
           name="max_char_limit"
           native-type="number"
           :min="1"
-          :max="2000"
           :form="field"
           label="Max character limit"
-          help="Maximum character limit of 2000"
           :required="false"
+          @update:model-value="onFieldMaxCharLimitChange"
         />
-        <checkbox-input
+        <toggle-switch-input
+          v-if="field.max_char_limit"
           name="show_char_limit"
           :form="field"
           class="mt-3"
@@ -566,11 +575,13 @@
     <!--  Advanced Options   -->
     <div
       v-if="field.type === 'text'"
-      class="border-b py-2 px-4"
+      class="px-4"
     >
-      <h3 class="font-semibold block text-lg mb-3">
-        Advanced Options
-      </h3>
+      <EditorSectionHeader
+        icon="i-heroicons-bars-3-bottom-left"
+        title="Advanced Options"
+      />
+      
       <toggle-switch-input
         :form="field"
         name="generates_uuid"
@@ -586,19 +597,6 @@
         @update:model-value="onFieldGenAutoIdChange"
       />
     </div>
-
-    <!--  Logic Block -->
-    <form-block-logic-editor
-      class="py-2 px-4 border-b"
-      :form="form"
-      :field="field"
-    />
-
-    <custom-field-validation 
-      class="py-2 px-4 border-b pb-16"
-      :form="form"
-      :field="field"
-    />
   </div>
 </template>
 
@@ -606,14 +604,16 @@
 import timezones from '~/data/timezones.json'
 import countryCodes from '~/data/country_codes.json'
 import CountryFlag from 'vue-country-flag-next'
-import FormBlockLogicEditor from '../../components/form-logic-components/FormBlockLogicEditor.vue'
-import CustomFieldValidation from '../../components/CustomFieldValidation.vue'
+import MatrixFieldOptions from './MatrixFieldOptions.vue'
+import HiddenRequiredDisabled from './HiddenRequiredDisabled.vue'
+import EditorSectionHeader from '~/components/open/forms/components/form-components/EditorSectionHeader.vue'
 import { format } from 'date-fns'
 import { default as _has } from 'lodash/has'
+import blocksTypes from '~/data/blocks_types.json'
 
 export default {
   name: 'FieldOptions',
-  components: { CountryFlag, FormBlockLogicEditor, CustomFieldValidation },
+  components: { CountryFlag, MatrixFieldOptions, HiddenRequiredDisabled, EditorSectionHeader },
   props: {
     field: {
       type: Object,
@@ -633,7 +633,15 @@ export default {
       editorToolbarCustom: [
         ['bold', 'italic', 'underline', 'link']
       ],
-      allCountries: countryCodes
+      allCountries: countryCodes,
+      barcodeDecodersOptions: [
+        { name: 'EAN-13 (European Article Number)', value: 'ean_reader' },
+        { name: 'EAN-8 (European Article Number)', value: 'ean_8_reader' },
+        { name: 'UPC-A (Universal Product Code)', value: 'upc_reader' },
+        { name: 'UPC-E (Universal Product Code)', value: 'upc_e_reader' },
+        { name: 'Code 128', value: 'code_128_reader' },
+        { name: 'Code 39', value: 'code_39_reader' },
+      ]
     }
   },
 
@@ -643,6 +651,9 @@ export default {
     },
     mbLimit() {
       return  (this.form?.workspace && this.form?.workspace.max_file_size) ? this.form?.workspace?.max_file_size : 10
+    },
+    optionsText() {
+      return this.field[this.field.type].options.map(option => option.name).join('\n')
     },
     prefillSelectsOptions() {
       if (!['select', 'multi_select'].includes(this.field.type)) return {}
@@ -682,12 +693,6 @@ export default {
       }
       return true
     },
-    optionsText() {
-      if (!this.field[this.field.type]) return ''
-      return this.field[this.field.type].options.map(option => {
-        return option.name
-      }).join('\n')
-    }
   },
 
   watch: {
@@ -726,28 +731,6 @@ export default {
   },
 
   methods: {
-    onFieldDisabledChange(val) {
-      this.field.disabled = val
-      if (this.field.disabled) {
-        this.field.hidden = false
-      }
-    },
-    onFieldRequiredChange(val) {
-      this.field.required = val
-      if (this.field.required) {
-        this.field.hidden = false
-      }
-    },
-    onFieldHiddenChange(val) {
-      this.field.hidden = val
-      if (this.field.hidden) {
-        this.field.required = false
-        this.field.disabled = false
-      } else {
-        this.field.generates_uuid = false
-        this.field.generates_auto_increment_id = false
-      }
-    },
     onFieldDateRangeChange(val) {
       this.field.date_range = val
       if (this.field.date_range) {
@@ -839,43 +822,55 @@ export default {
     },
     setDefaultFieldValues() {
       const defaultFieldValues = {
-        slider: {
-          slider_min_value: 0,
-          slider_max_value: 100,
-          slider_step_value: 1
-        },
-        scale: {
-          scale_min_value: 1,
-          scale_max_value: 5,
-          scale_step_value: 1
-        },
-        rating: {
-          rating_max_value: 5
-        },
         files: {
           max_file_size: Math.min((this.field.max_file_size ?? this.mbLimit), this.mbLimit)
-        },
-        text: {
-          multi_lines: false,
-          max_char_limit: 2000
-        },
-        email: {
-          max_char_limit: 2000
-        },
-        url: {
-          max_char_limit: 2000
         },
         date: {
           date_format: this.dateFormatOptions[0].value,
           time_format: this.timeFormatOptions[0].value
         }
       }
+
+      // Apply type-specific defaults from blocks_types.json if available
+      if (this.field.type in blocksTypes && blocksTypes[this.field.type]?.default_values) {
+        Object.keys(blocksTypes[this.field.type].default_values).forEach(key => {
+          if (!_has(this.field, key)) {
+            this.field[key] = blocksTypes[this.field.type].default_values[key]
+          }
+        })
+      }
+
+      // Apply additional defaults from defaultFieldValues if needed
       if (this.field.type in defaultFieldValues) {
         Object.keys(defaultFieldValues[this.field.type]).forEach(key => {
-          if (!_has(this.field,key)) {
+          if (!_has(this.field, key)) {
             this.field[key] = defaultFieldValues[this.field.type][key]
           }
         })
+      }
+
+      // Ensure critical defaults for specific types
+      if (this.field.type === "rating" && !this.field.rating_max_value) {
+        this.field.rating_max_value = 5
+      } else if (this.field.type === "scale" && (!this.field.scale_min_value || !this.field.scale_max_value || !this.field.scale_step_value)) {
+        this.field.scale_min_value = 1
+        this.field.scale_max_value = 5
+        this.field.scale_step_value = 1
+      } else if (this.field.type === "slider" && (!this.field.slider_min_value || !this.field.slider_max_value || !this.field.slider_step_value)) {
+        this.field.slider_min_value = 0
+        this.field.slider_max_value = 50
+        this.field.slider_step_value = 1
+      } else if (["select", "multi_select"].includes(this.field.type) && !this.field[this.field.type]?.options) {
+        this.field[this.field.type] = { options: [] }
+      }
+    },
+    updateMatrixField(newField) {
+      this.field = newField
+    },
+    onFieldMaxCharLimitChange(val) {
+      this.field.max_char_limit = val
+      if(!this.field.max_char_limit) {
+        this.field.show_char_limit = false
       }
     }
   }

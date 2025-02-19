@@ -1,3 +1,5 @@
+import { default as _isEqual } from "lodash/isEqual"
+
 export function conditionsMet(conditions, formData) {
   if (conditions === undefined || conditions === null) {
     return false
@@ -59,12 +61,32 @@ function propertyConditionMet(propertyCondition, value) {
       return multiSelectConditionMet(propertyCondition, value)
     case "files":
       return filesConditionMet(propertyCondition, value)
+    case "matrix":
+      return matrixConditionMet(propertyCondition, value)
   }
   return false
 }
 
 function checkEquals(condition, fieldValue) {
   return condition.value === fieldValue
+}
+
+function checkObjectEquals(condition, fieldValue) {
+  return _isEqual(condition.value, fieldValue)
+}
+
+function checkMatrixContains(condition, fieldValue)
+{
+  if (typeof fieldValue === "undefined" || typeof fieldValue !== "object") {
+    return false
+  }
+  const conditionValue = condition.value
+  for (const key in conditionValue) {
+    if(conditionValue[key] == fieldValue[key]){
+      return true
+    }
+  }
+  return false
 }
 
 function checkContains(condition, fieldValue) {
@@ -148,7 +170,7 @@ function checkPastWeek(condition, fieldValue) {
   return (
     fieldDate <= today &&
     fieldDate >=
-      new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7)
+    new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7)
   )
 }
 
@@ -159,7 +181,7 @@ function checkPastMonth(condition, fieldValue) {
   return (
     fieldDate <= today &&
     fieldDate >=
-      new Date(today.getFullYear(), today.getMonth() - 1, today.getDate())
+    new Date(today.getFullYear(), today.getMonth() - 1, today.getDate())
   )
 }
 
@@ -170,7 +192,7 @@ function checkPastYear(condition, fieldValue) {
   return (
     fieldDate <= today &&
     fieldDate >=
-      new Date(today.getFullYear() - 1, today.getMonth(), today.getDate())
+    new Date(today.getFullYear() - 1, today.getMonth(), today.getDate())
   )
 }
 
@@ -181,7 +203,7 @@ function checkNextWeek(condition, fieldValue) {
   return (
     fieldDate >= today &&
     fieldDate <=
-      new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7)
+    new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7)
   )
 }
 
@@ -192,7 +214,7 @@ function checkNextMonth(condition, fieldValue) {
   return (
     fieldDate >= today &&
     fieldDate <=
-      new Date(today.getFullYear(), today.getMonth() + 1, today.getDate())
+    new Date(today.getFullYear(), today.getMonth() + 1, today.getDate())
   )
 }
 
@@ -203,7 +225,7 @@ function checkNextYear(condition, fieldValue) {
   return (
     fieldDate >= today &&
     fieldDate <=
-      new Date(today.getFullYear() + 1, today.getMonth(), today.getDate())
+    new Date(today.getFullYear() + 1, today.getMonth(), today.getDate())
   )
 }
 
@@ -256,6 +278,20 @@ function textConditionMet(propertyCondition, value) {
       return checkLength(propertyCondition, value, "<")
     case "content_length_less_than_or_equal_to":
       return checkLength(propertyCondition, value, "<=")
+    case 'matches_regex':
+      try {
+        const regex = new RegExp(propertyCondition.value)
+        return regex.test(value)
+      } catch (e) {
+        return false
+      }
+    case 'does_not_match_regex':
+      try {
+        const regex = new RegExp(propertyCondition.value)
+        return !regex.test(value)
+      } catch (e) {
+        return true
+      }
   }
   return false
 }
@@ -296,10 +332,15 @@ function numberConditionMet(propertyCondition, value) {
 
 function checkboxConditionMet(propertyCondition, value) {
   switch (propertyCondition.operator) {
+    case "is_checked":
+      return value === true
+    case "is_not_checked":
+      return value === false
+    // Legacy operators
     case "equals":
-      return checkEquals(propertyCondition, value)
+      return value === true
     case "does_not_equal":
-      return !checkEquals(propertyCondition, value)
+      return value === false
   }
   return false
 }
@@ -368,6 +409,20 @@ function filesConditionMet(propertyCondition, value) {
       return checkIsEmpty(propertyCondition, value)
     case "is_not_empty":
       return !checkIsEmpty(propertyCondition, value)
+  }
+  return false
+}
+
+function matrixConditionMet(propertyCondition, value) {
+  switch (propertyCondition.operator) {
+    case "equals":
+      return checkObjectEquals(propertyCondition, value)
+    case "does_not_equal":
+      return !checkObjectEquals(propertyCondition, value)
+    case "contains":
+     return checkMatrixContains(propertyCondition, value)
+    case "does_not_contain":
+     return !checkMatrixContains(propertyCondition, value)
   }
   return false
 }

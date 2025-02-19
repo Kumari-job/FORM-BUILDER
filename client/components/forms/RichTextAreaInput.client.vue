@@ -1,88 +1,145 @@
 <template>
-  <InputWrapper v-bind="inputWrapperProps">
+  <InputWrapper
+    v-bind="inputWrapperProps"
+    wrapper-class="not-draggable"
+  >
     <template #label>
       <slot name="label" />
     </template>
 
-    <VueEditor
-      :id="id ? id : name"
-      ref="editor"
-      v-model="compVal"
-      :disabled="disabled ? true : null"
-      :placeholder="placeholder"
+    <div
+      class="rich-editor resize-y notranslate"
       :class="[
         {
           '!ring-red-500 !ring-2 !border-transparent': hasError,
-          '!cursor-not-allowed !bg-gray-200': disabled,
+          '!cursor-not-allowed !bg-gray-200 dark:!bg-gray-800': disabled,
+          'focus-within:ring-2 focus-within:ring-opacity-100 focus-within:border-transparent': !hasError && !disabled
         },
         theme.RichTextAreaInput.input,
         theme.RichTextAreaInput.borderRadius,
+        theme.default.fontSize,
       ]"
-      :editor-options="editorOptions"
-      :editor-toolbar="editorToolbar"
-      class="rich-editor resize-y"
-      :style="inputStyle"
-    />
+      :style="{
+        '--font-size': theme.default.fontSize,
+        ...inputStyle
+      }"
+    >
+      <QuillyEditor
+        :id="id ? id : name"
+        ref="editor"
+        v-model="compVal"
+        :options="quillOptions"
+        :disabled="disabled"
+        :style="inputStyle"
+      />
+    </div>
 
-    <template #help>
+    <template
+      v-if="$slots.help"
+      #help
+    >
       <slot name="help" />
     </template>
-    <template #error>
+
+    <template
+      v-if="maxCharLimit && showCharLimit"
+      #bottom_after_help
+    >
+      <small :class="theme.default.help">
+        {{ charCount }}/{{ maxCharLimit }}
+      </small>
+    </template>
+
+    <template
+      v-if="$slots.error"
+      #error
+    >
       <slot name="error" />
     </template>
+
+    <MentionDropdown
+      v-if="enableMentions && mentionState"
+      :state="mentionState"
+      :mentions="mentions"
+    />
   </InputWrapper>
 </template>
 
-<script>
-import { Quill, VueEditor } from 'vue3-editor'
+<script setup>
+import Quill from 'quill'
 import { inputProps, useFormInput } from './useFormInput.js'
 import InputWrapper from './components/InputWrapper.vue'
+import QuillyEditor from './components/QuillyEditor.vue'
+import MentionDropdown from './components/MentionDropdown.vue'
+import registerMentionExtension from '~/lib/quill/quillMentionExtension.js'
 
-Quill.imports['formats/link'].PROTOCOL_WHITELIST.push('notion')
-
-export default {
-  name: 'RichTextAreaInput',
-  components: { InputWrapper, VueEditor },
-
-  props: {
-    ...inputProps,
-    editorOptions: {
-      type: Object,
-      default: () => {
-        return {
-          formats: [
-            'bold',
-            'color',
-            'font',
-            'italic',
-            'link',
-            'underline',
-            'header',
-            'indent',
-            'list'
-          ]
-        }
-      }
-    },
-    editorToolbar: {
-      type: Array,
-      default: () => {
-        return [
-          [{ header: 1 }, { header: 2 }],
-          ['bold', 'italic', 'underline', 'link'],
-          [{ list: 'ordered' }, { list: 'bullet' }],
-          [{ color: [] }]
-        ]
-      }
-    }
+const props = defineProps({
+  ...inputProps,
+  maxCharLimit: { type: Number, required: false, default: null },
+  editorOptions: {
+    type: Object,
+    default: () => ({})
   },
+  enableMentions: {
+    type: Boolean,
+    default: false
+  },
+  mentions: {
+    type: Array,
+    default: () => []
+  }
+})
 
-  setup (props, context) {
-    return {
-      ...useFormInput(props, context)
+const emit = defineEmits(['update:modelValue'])
+
+const { compVal, inputStyle, hasError, inputWrapperProps } = useFormInput(props, { emit })
+const editor = ref(null)
+const mentionState = ref(null)
+
+// Add this watch to clean up empty HTML content
+watch(compVal, (val) => {
+  if (val && val.replace(/<[^>]*>/g, '').trim() === '') {
+    compVal.value = null
+  }
+}, { immediate: true })
+
+// Move the mention extension registration to onMounted
+
+if (props.enableMentions && !Quill.imports['blots/mention']) {
+  mentionState.value = registerMentionExtension(Quill)
+}
+
+const quillOptions = computed(() => {
+  const defaultOptions = {
+    placeholder: props.placeholder || '',
+    theme: 'snow',
+    modules: {
+      toolbar: [
+        [{ 'header': 1 }, { 'header': 2 }],
+        ['bold', 'italic', 'underline', 'strike'],
+        ['link'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        [{ color: [] }],
+      ]
     }
   }
-}
+
+  const mergedOptions = { ...defaultOptions, ...props.editorOptions, modules: { ...defaultOptions.modules, ...props.editorOptions.modules } }
+  
+  if (props.enableMentions) {
+    mergedOptions.modules.mention = true
+    if (!mergedOptions.modules.toolbar) {
+      mergedOptions.modules.toolbar = []
+    }
+    mergedOptions.modules.toolbar.push(['mention'])
+  }
+  
+  return mergedOptions
+})
+
+const charCount = computed(() => {
+  return compVal.value ? compVal.value.replace(/<[^>]*>/g, '').trim().length : 0
+})
 </script>
 
 <style lang="scss">
@@ -91,6 +148,7 @@ export default {
     border-bottom: 0px !important;
     border-right: 0px !important;
     border-left: 0px !important;
+    font-size: var(--font-size);
 
     .ql-editor {
       min-height: 100px !important;
@@ -101,6 +159,14 @@ export default {
     border-top: 0px !important;
     border-right: 0px !important;
     border-left: 0px !important;
+  }
+
+  .ql-header {
+    @apply rounded-md;
+  }
+
+  .ql-editor.ql-blank:before {
+    @apply text-gray-400 dark:text-gray-500 not-italic;
   }
 
   .ql-snow .ql-toolbar .ql-picker-item.ql-selected,
@@ -118,6 +184,25 @@ export default {
   .ql-snow.ql-toolbar button:focus,
   .ql-snow.ql-toolbar button:hover {
     @apply text-nt-blue;
+  }
+}
+
+.ql-mention {
+  padding-top: 0px !important;
+}
+.ql-mention::after {
+  content: '@';
+  font-size: 16px;
+}
+
+
+.rich-editor, .mention-input {
+  span[mention] {
+    @apply inline-flex items-center align-baseline leading-tight text-sm relative bg-blue-100 text-blue-800 border border-blue-200 rounded-md px-1 py-0.5 mx-0.5;
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 </style>

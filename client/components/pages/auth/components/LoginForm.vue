@@ -30,7 +30,7 @@
       />
 
       <!-- Remember Me -->
-      <div class="relative flex items-start mt-5">
+      <div class="relative flex items-center mt-3">
         <CheckboxInput
           v-model="remember"
           class="w-full md:w-1/2"
@@ -52,13 +52,14 @@
 
       <!-- Submit Button -->
       <v-button
-        class="w-full flex"
+        class="w-full flex mt-2"
         :loading="form.busy || loading"
       >
         Log in to continue
       </v-button>
 
       <v-button
+        v-if="useFeatureFlag('services.google.auth')"
         native-type="button"
         color="white"
         class="space-x-4 mt-4 flex items-center w-full"
@@ -67,12 +68,12 @@
       >
         <Icon
           name="devicon:google"
-          class="w-4 h-4 -mt-1"
+          class="w-4 h-4"
         />
         <span class="mx-2">Sign in with Google</span>
       </v-button>
       <p
-        v-if="!appStore.selfHosted"
+        v-if="!useFeatureFlag('self_hosted')"
         class="text-gray-500 text-sm text-center mt-4"
       >
         Don't have an account?

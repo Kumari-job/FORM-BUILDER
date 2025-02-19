@@ -16,10 +16,10 @@
         theme.default.fontSize,
         {
           '!ring-red-500 !ring-2 !border-transparent': hasError,
-          '!cursor-not-allowed !bg-gray-200': disabled,
+          '!cursor-not-allowed !bg-gray-200 dark:!bg-gray-800': disabled,
         },
       ]"
-      class="resize-y"
+      class="resize-y block"
       :name="name"
       :style="inputStyle"
       :placeholder="placeholder"
@@ -63,7 +63,6 @@ export default {
   props: {
     ...inputProps,
     maxCharLimit: {type: Number, required: false, default: null},
-    showCharLimit: {type: Boolean, required: false, default: false},
   },
 
   setup(props, context) {

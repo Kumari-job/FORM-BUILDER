@@ -1,15 +1,15 @@
 /**
  Input classes for each supported form themes
  */
-export const themes = {
+ export const themes = {
   default: {
     default: {
       wrapper: {
-        sm: 'relative mb-2',
-        md: 'relative mb-3',
-        lg: 'relative mb-3',
+        sm: 'relative my-1',
+        md: 'relative my-1.5',
+        lg: 'relative my-1.5',
       },
-      label: 'text-gray-700 dark:text-gray-300 font-medium',
+      label: 'text-gray-700 dark:text-gray-300 font-semibold',
       input:
         'flex-1 appearance-none border border-gray-300 dark:border-gray-600 w-full bg-white text-gray-700 dark:bg-notion-dark-light dark:text-gray-300 dark:placeholder-gray-500 placeholder-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:border-transparent focus:ring-opacity-100',
       help: 'text-gray-500',
@@ -55,7 +55,9 @@ export const themes = {
     },
     SelectInput: {
       input:
-        'relative w-full flex-1 appearance-none border border-gray-300 dark:border-gray-600 w-full bg-white text-gray-700 placeholder-gray-400 dark:bg-notion-dark-light dark:text-gray-300 dark:placeholder-gray-600 shadow-sm text-base focus:outline-none focus:ring-2 focus:border-transparent',
+        'relative w-full flex-1 appearance-none border border-gray-300 dark:border-gray-600 w-full text-gray-700 dark:text-gray-300 dark:placeholder-gray-600 shadow-sm text-base focus:outline-none focus:ring-2 focus:border-transparent',
+      background: 'bg-white dark:bg-notion-dark-light',
+      chevronGradient: 'bg-gradient-to-r from-transparent to-white dark:to-notion-dark-light',
       dropdown: 'border border-gray-300 dark:border-gray-600',
       option: 'rounded',
       minHeight: {
@@ -64,8 +66,30 @@ export const themes = {
         lg: 'min-h-[28px]'
       }
     },
+     PhoneInput: {
+        countrySelectWidth: {
+          sm: 'w-[100px]',
+          md: 'w-[120px]',
+          lg: 'w-[120px]'
+        },
+        flag: {
+          sm: '!-mt-[14px]',
+          md: '!-mt-[9px] rounded',
+          lg: '!-mt-[9px] rounded'
+        },
+        flagSize: {
+          sm: 'small',
+          md: 'normal',
+          lg: 'normal'
+        },
+        maxHeight: {
+          sm: 'max-h-[20px]',
+          md: 'max-h-[24px]',
+          lg: 'max-h-[28px]'
+        }
+     },
     FlatSelectInput: {
-      option: 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 flex items-center space-x-2 border-t first:border-t-0 px-2',
+      option: 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900 flex items-center gap-x-2 border-t first:border-t-0 px-2',
       unselectedIcon: 'text-gray-300 dark:text-gray-600',
       icon: {
         sm: 'w-4 h-4',
@@ -129,14 +153,19 @@ export const themes = {
         md: 'min-h-40',
         lg: 'min-h-48'
       },
+    },
+    MatrixInput: {
+      table: 'bg-white dark:bg-notion-dark-light shadow-sm',
+      cell: 'border-gray-300 dark:border-gray-600',
+      cellHover: 'hover:bg-gray-50 dark:hover:bg-gray-900'
     }
   },
   simple: {
     default: {
       wrapper: {
-        sm: 'relative mb-2',
-        md: 'relative mb-3',
-        lg: 'relative mb-3',
+        sm: 'relative my-1',
+        md: 'relative my-1.5',
+        lg: 'relative my-1.5',
       },
       label: 'text-gray-700 dark:text-gray-300 font-medium',
       input:
@@ -184,13 +213,37 @@ export const themes = {
     },
     SelectInput: {
       input:
-        'relative w-full flex-1 appearance-none border border-gray-300 dark:border-gray-600 w-full bg-white text-gray-700 placeholder-gray-400 dark:bg-notion-dark-light dark:text-gray-300 dark:placeholder-gray-600 text-base focus:outline-none focus:ring-2 focus:border-transparent',
+        'relative w-full flex-1 appearance-none border border-gray-300 dark:border-gray-600 w-full text-gray-700 dark:text-gray-300 dark:placeholder-gray-600 text-base focus:outline-none focus:ring-2 focus:border-transparent',
+      background: 'bg-white dark:bg-notion-dark-light',
+      chevronGradient: 'bg-gradient-to-r from-transparent to-white dark:to-notion-dark-light',
       dropdown: 'border border-gray-300 dark:border-gray-600',
       option: 'rounded',
       minHeight: {
         sm: 'min-h-[20px]',
         md: 'min-h-[24px]',
         lg: 'min-h-[28px]'
+      }
+    },
+    PhoneInput: {
+      countrySelectWidth: {
+        sm: 'w-[100px]',
+        md: 'w-[120px]',
+        lg: 'w-[120px]'
+      },
+      flag: {
+        sm: '!-mt-[14px]',
+        md: '!-mt-[9px] rounded',
+        lg: '!-mt-[9px] rounded'
+      },
+      flagSize: {
+        sm: 'small',
+        md: 'normal',
+        lg: 'normal'
+      },
+      maxHeight: {
+        sm: 'max-h-[20px]',
+        md: 'max-h-[24px]',
+        lg: 'max-h-[28px]'
       }
     },
     FlatSelectInput: {
@@ -252,18 +305,23 @@ export const themes = {
         md: 'min-h-40',
         lg: 'min-h-48'
       },
+    },
+    MatrixInput: {
+      table: 'bg-white dark:bg-notion-dark-light',
+      cell: 'border-gray-300 dark:border-gray-600',
+      cellHover: 'hover:bg-gray-50 dark:hover:bg-gray-900'
     }
   },
   notion: {
     default: {
       wrapper: {
-        sm: 'relative mb-2',
-        md: 'relative mb-3',
-        lg: 'relative mb-3',
+        sm: 'relative my-1',
+        md: 'relative my-1.5',
+        lg: 'relative my-1.5',
       },
       label: 'text-gray-900 dark:text-gray-100 mb-1 block mt-4',
       input:
-        'rounded border-transparent flex-1 appearance-none shadow-inner-notion w-full bg-notion-input-background dark:bg-notion-dark-light text-gray-900 dark:text-gray-100 dark:placeholder-gray-500 placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-transparent focus:shadow-focus-notion',
+        'rounded border border-notion-input-border dark:border-notion-input-borderDark flex-1 appearance-none w-full bg-notion-input-background dark:bg-notion-dark-light text-gray-900 dark:text-gray-100 dark:placeholder-gray-500 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-opacity-40 focus:border-transparent',
       help: 'text-gray-500',
       spacing: {
         horizontal: {
@@ -289,31 +347,55 @@ export const themes = {
       }
     },
     ScaleInput: {
-      button: 'border-transparent flex-1 appearance-none shadow-inner-notion w-full bg-notion-input-background dark:bg-notion-dark-light text-gray-900 dark:text-gray-100 text-center',
-      unselectedButton: 'bg-notion-input-background dark:bg-notion-dark-light border'
+      button: 'border border-notion-input-border dark:border-notion-input-borderDark flex-1 appearance-none w-full bg-notion-input-background dark:bg-notion-dark-light text-gray-900 dark:text-gray-100 text-center focus:outline-none focus:ring-2 focus:ring-opacity-40 focus:border-transparent',
+      unselectedButton: 'bg-notion-input-background dark:bg-notion-dark-light'
     },
     SliderInput: {
       stepLabel: 'text-gray-700 dark:text-gray-300 text-center text-xs'
     },
     Button: {
-      body: 'transition ease-in duration-200 text-center font-semibold shadow shadow-inner-notion focus:outline-none focus:ring-2 focus:ring-offset-2 filter hover:brightness-90'
+      body: 'transition ease-in duration-200 text-center font-semibold border border-notion-input-border dark:border-notion-input-borderDark focus:outline-none focus:ring-2 focus:ring-opacity-40 focus:border-transparent filter hover:brightness-90'
     },
     CodeInput: {
-      input: 'shadow-inner-notion border-transparent focus:border-transparent overflow-hidden'
+      input: 'border border-notion-input-border dark:border-notion-input-borderDark focus:outline-none focus:ring-2 focus:ring-opacity-40 focus:border-transparent overflow-hidden'
     },
     RichTextAreaInput: {
       input:
-        'flex-1 appearance-none shadow-inner-notion  border-transparent focus:border-transparent w-full text-gray-900 bg-notion-input-background dark:bg-notion-dark-light dark:placeholder-gray-500 placeholder-gray-400 text-base focus:outline-none focus:ring-0 focus:ring-opacity-100 focus:border-transparent focus:ring-0 focus:shadow-focus-notion'
+        'flex-1 appearance-none border border-notion-input-border dark:border-notion-input-borderDark w-full bg-notion-input-background dark:bg-notion-dark-light text-gray-900 dark:text-gray-100 dark:placeholder-gray-500 placeholder-gray-400 text-base focus:outline-none focus:ring-2 focus:ring-opacity-40 focus:border-transparent'
     },
     SelectInput: {
       input:
-        'relative w-full border-transparent flex-1 appearance-none bg-notion-input-background shadow-inner-notion w-full text-gray-900 placeholder-gray-400 dark:bg-notion-dark-light dark:placeholder-gray-500 text-base focus:outline-none focus:ring-0 focus:border-transparent focus:shadow-focus-notion',
-      dropdown: 'border border-gray-300 dark:border-gray-600',
+        'relative w-full border border-notion-input-border dark:border-notion-input-borderDark flex-1 appearance-none w-full text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-base focus:outline-none focus:ring-2 focus:ring-opacity-40 focus:border-transparent',
+      background: 'bg-notion-input-background dark:bg-notion-dark-light',
+      chevronGradient: 'bg-gradient-to-r from-transparent to-notion-input-background dark:to-notion-dark-light',
+      dropdown: 'border border-notion-input-border dark:border-notion-input-borderDark',
       option: 'rounded',
       minHeight: {
         sm: 'min-h-[20px]',
         md: 'min-h-[24px]',
         lg: 'min-h-[28px]'
+      }
+    },
+    PhoneInput: {
+      countrySelectWidth: {
+        sm: 'w-[100px]',
+        md: 'w-[120px]',
+        lg: 'w-[120px]'
+      },
+      flag: {
+        sm: '!-mt-[14px]',
+        md: '!-mt-[9px] rounded',
+        lg: '!-mt-[9px] rounded'
+      },
+      flagSize: {
+        sm: 'small',
+        md: 'normal',
+        lg: 'normal'
+      },
+      maxHeight: {
+        sm: 'max-h-[20px]',
+        md: 'max-h-[24px]',
+        lg: 'max-h-[28px]'
       }
     },
     FlatSelectInput: {
@@ -326,7 +408,7 @@ export const themes = {
       }
     },
     DateInput: {
-      input: 'shadow-inner-notion border-transparent focus:border-transparent flex-1 appearance-none w-full bg-notion-input-background dark:bg-notion-dark-light text-gray-900 dark:text-gray-100 placeholder-gray-400 text-base focus:outline-none focus:ring-0 focus:border-transparent focus:shadow-focus-notion p-[1px]'
+      input: 'border border-notion-input-border dark:border-notion-input-borderDark flex-1 appearance-none w-full bg-notion-input-background dark:bg-notion-dark-light text-gray-900 dark:text-gray-100 placeholder-gray-400 text-base focus:outline-none focus:ring-2 focus:ring-opacity-40 focus:border-transparent'
     },
     CheckboxInput:{
       size: {
@@ -346,6 +428,11 @@ export const themes = {
         md: 'h-4 w-4',
         lg: 'h-4 w-4'
       },
+      translatedClass: {
+        sm: 'translate-x-5',
+        md: 'translate-x-6',
+        lg: 'translate-x-6'
+      }
     },
     RatingInput:{
       size: {
@@ -356,7 +443,7 @@ export const themes = {
     },
     fileInput: {
       input:
-        'p-4 rounded bg-notion-input-background dark:bg-notion-dark',
+        'p-4 rounded border border-dashed border-notion-input-border dark:border-notion-input-borderDark bg-notion-input-background dark:bg-notion-dark-light focus:outline-none focus:ring-2 focus:ring-opacity-40 focus:border-transparent',
       minHeight: {
         sm: 'min-h-28',
         md: 'min-h-40',
@@ -367,7 +454,7 @@ export const themes = {
         dark: 'bg-notion-dark-light'
       },
       uploadedFile:
-        'border border-gray-300 dark:border-gray-600 bg-white dark:bg-notion-dark-light rounded shadow-sm max-w-[10rem]'
+        'border border-notion-input-border dark:border-notion-input-borderDark bg-white dark:bg-notion-dark-light rounded max-w-[10rem] focus:outline-none focus:ring-2 focus:ring-opacity-40 focus:border-transparent'
     },
     SignatureInput: {
       minHeight: {
@@ -375,6 +462,11 @@ export const themes = {
         md: 'min-h-40',
         lg: 'min-h-48'
       },
+    },
+    MatrixInput: {
+      table: 'bg-notion-input-background dark:bg-notion-dark-light',
+      cell: 'border-notion-input-border dark:border-notion-input-borderDark',
+      cellHover: 'hover:backdrop-brightness-95'
     }
   }
 }

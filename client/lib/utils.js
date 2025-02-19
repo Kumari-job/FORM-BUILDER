@@ -88,7 +88,7 @@ export const getHost = function () {
  * @returns {*}
  */
 export const getDomain = function (url) {
-  if (url.includes("localhost")) return "localhost"
+  if (!url || url.includes("localhost")) return "localhost"
   try {
     if (!url.startsWith("http")) url = "https://" + url
     return new URL(url).hostname
@@ -103,9 +103,21 @@ export const getDomain = function (url) {
  */
 export const customDomainUsed = function () {
   const config = useRuntimeConfig()
-  if (!config.public.customDomainsEnabled) return false
+  if (!useFeatureFlag('custom_domains')) return false
   const appDomain = getDomain(config.public.appUrl)
   const host = getHost()
 
   return host !== appDomain && getDomain(host) !== appDomain
+}
+
+export const mentionAsText = (content) => {
+  if (!content) return ''
+  
+  // Parse the content and style mentions
+  return content.replace(
+    /<span\s+mention-field-id="([^"]+)"\s+mention-field-name="([^"]+)"[^>]*>([^<]+)<\/span>/g,
+    (match, fieldId, fieldName, text) => {
+      return `${text}`
+    }
+  )
 }

@@ -24,6 +24,7 @@
       />
 
       <select-input
+        v-if="!disableEmail"
         name="hear_about_us"
         :options="hearAboutUsOptions"
         :form="form"
@@ -51,6 +52,19 @@
         name="password_confirmation"
         label="Confirm Password"
       />
+
+      <!-- Captcha -->
+      <div
+        v-if="recaptchaSiteKey"
+        class="my-4 px-2 mx-auto w-max"
+      >
+        <CaptchaInput
+          ref="captcha"
+          provider="recaptcha"
+          :form="form"
+          language="en"
+        />
+      </div>
 
       <checkbox-input
         :form="form"
@@ -87,19 +101,21 @@
         Create account
       </v-button>
 
-      <p class="text-gray-600/50 text-sm text-center my-4">
-        Or
-      </p>
-      <v-button
-        native-type="buttom"
-        color="white"
-        class="space-x-4 flex items-center w-full"
-        :loading="false"
-        @click.prevent="signInwithGoogle"
-      >
-        <Icon name="devicon:google" />
-        <span class="mx-2">Sign in with Google</span>
-      </v-button>
+      <template v-if="useFeatureFlag('services.google.auth')">
+        <p class="text-gray-600/50 text-sm text-center my-4">
+          Or
+        </p>
+        <v-button
+          native-type="buttom"
+          color="white"
+          class="space-x-4 flex items-center w-full"
+          :loading="false"
+          @click.prevent="signInwithGoogle"
+        >
+          <Icon name="devicon:google" />
+          <span class="mx-2">Sign in with Google</span>
+        </v-button>
+      </template>
 
       <p class="text-gray-500 mt-4 text-sm text-center">
         Already have an account?
@@ -123,7 +139,7 @@
 
 <script>
 import {opnFetch} from "~/composables/useOpnApi.js"
-import {fetchAllWorkspaces} from "~/stores/workspaces.js"
+import { fetchAllWorkspaces } from "~/stores/workspaces.js"
 
 export default {
   name: "RegisterForm",
@@ -138,12 +154,15 @@ export default {
   emits: ['afterQuickLogin', 'openLogin'],
 
   setup() {
+    const { $utm } = useNuxtApp()
     return {
       authStore: useAuthStore(),
       formsStore: useFormsStore(),
       workspaceStore: useWorkspacesStore(),
       providersStore: useOAuthProvidersStore(),
+      runtimeConfig: useRuntimeConfig(),
       logEvent: useAmplitude().logEvent,
+      $utm
     }
   },
 
@@ -151,15 +170,21 @@ export default {
     form: useForm({
       name: "",
       email: "",
+      hear_about_us: "",
       password: "",
       password_confirmation: "",
       agree_terms: false,
       appsumo_license: null,
+      utm_data: null,
+      'g-recaptcha-response': null
     }),
-    disableEmail:false
+    disableEmail: false,
   }),
 
   computed: {
+    recaptchaSiteKey() {
+      return this.runtimeConfig.public.recaptchaSiteKey
+    },
     hearAboutUsOptions() {
       const options = [
         {name: "Facebook", value: "facebook"},
@@ -193,6 +218,7 @@ export default {
     if (this.$route.query?.invite_token) {
       if (this.$route.query?.email) {
         this.form.email = this.$route.query?.email
+        this.form.hear_about_us = 'invite'
         this.disableEmail = true
       }
       this.form.invite_token = this.$route.query?.invite_token
@@ -202,6 +228,11 @@ export default {
   methods: {
     async register() {
       let data
+      this.form.utm_data = this.$utm.value
+      // Reset captcha after submission
+      if (import.meta.client && this.recaptchaSiteKey) {
+        this.$refs.captcha.reset()
+      }
       try {
         // Register the user.
         data = await this.form.post("/register")

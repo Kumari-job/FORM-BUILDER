@@ -14,7 +14,7 @@
         theme.SignatureInput.borderRadius,
         {
           '!ring-red-500 !ring-2 !border-transparent': hasError,
-          '!cursor-not-allowed !bg-gray-200': disabled,
+          '!cursor-not-allowed !bg-gray-200 dark:!bg-gray-800': disabled,
         },
       ]"
       class="flex flex-wrap items-center justify-center gap-4"
@@ -25,7 +25,7 @@
       >
         <Loader class="mx-auto h-6 w-6" />
         <p class="mt-2 text-center text-sm text-gray-500">
-          Uploading your file...
+          {{ $t('forms.fileInput.uploadingFile') }}
         </p>
       </div>
     
@@ -41,6 +41,7 @@
     <VueSignaturePad
       v-else
       ref="signaturePad"
+      class="not-draggable"
       :class="[
         theme.SignatureInput.input,
         theme.SignatureInput.spacing.horizontal,
@@ -49,7 +50,7 @@
         theme.SignatureInput.borderRadius,
         {
           '!ring-red-500 !ring-2 !border-transparent': hasError,
-          '!cursor-not-allowed !bg-gray-200': disabled,
+          '!cursor-not-allowed !bg-gray-200 dark:!bg-gray-800': disabled,
         },
       ]"
       height="150px"
@@ -75,7 +76,7 @@
           :class="theme.default.help"
           href="#"
           @click.prevent="openFileUpload"
-        >Upload file instead</a>
+        >{{ $t('forms.signatureInput.uploadFileInstead') }}</a>
       </small>
 
       <small :class="theme.default.help">
@@ -83,7 +84,7 @@
           :class="theme.default.help"
           href="#"
           @click.prevent="clear"
-        >Clear</a>
+        >{{ $t('forms.signatureInput.clear') }}</a>
       </small>
     </template>
 
@@ -168,7 +169,7 @@ export default {
           }
           this.loading = false
         })
-        .catch((error) => {
+        .catch(() => {
           this.loading = false
           this.file = null
         })

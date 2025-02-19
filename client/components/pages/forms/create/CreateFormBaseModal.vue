@@ -44,7 +44,7 @@
     </template>
     <div
       v-if="state == 'default'"
-      class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8"
+      class="grid grid-cols-1 sm:grid-cols-2 gap-4"
     >
       <div
         v-track.select_form_base="{ base: 'contact-form' }"
@@ -72,7 +72,7 @@
         </p>
       </div>
       <div
-        v-if="aiFeaturesEnabled"
+        v-if="useFeatureFlag('ai_features')"
         v-track.select_form_base="{ base: 'ai' }"
         class="rounded-md border p-4 flex flex-col items-center cursor-pointer hover:bg-gray-50"
         role="button"
@@ -184,12 +184,6 @@ export default {
     }),
     loading: false,
   }),
-
-  computed: {
-    aiFeaturesEnabled() {
-      return this.runtimeConfig.public.aiFeaturesEnabled
-    },
-  },
 
   methods: {
     generateForm() {

@@ -5,6 +5,7 @@
         Workspace Members
       </h4>
       <UButton
+        v-if="!workspace.is_readonly"
         label="Invite User"
         icon="i-heroicons-user-plus-20-solid"
         :loading="loading"
@@ -202,7 +203,7 @@ const showEditUserModal = ref(false)
 const selectedUser = ref(null)
 const userNewRole = ref("")
 
-const paidPlansEnabled = computed(() => useRuntimeConfig().public.paidPlansEnabled)
+const paidPlansEnabled = ref(useFeatureFlag('billing.enabled'))
 const canInviteUser = computed(() => {
   return paidPlansEnabled.value ? workspace.value.is_pro : true
 })
@@ -280,7 +281,7 @@ const removeUser = (index) => {
       ).then(() => {
         useAlert().success("User successfully removed.")
         getWorkspaceUsers()
-      }).catch((error) => {
+      }).catch(() => {
         useAlert().error("There was an error removing user")
       }).finally(() => {
         loadingUsers.value = false
@@ -318,7 +319,7 @@ const leaveWorkSpace = (workspaceId) => {
         useAlert().success("You have left the workspace.")
         workspacesStore.remove(workspaceId)
         getWorkspaceUsers()
-      }).catch((error) => {
+      }).catch(() => {
         useAlert().error("There was an error leaving the workspace.")
       }).finally(() => {
         leaveWorkspaceLoadingState.value = false

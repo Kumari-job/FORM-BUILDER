@@ -1,30 +1,44 @@
 #!/bin/bash
 
 main() {
-    prep_file_permissions
-    prep_storage
-    wait_for_db
-    apply_db_migrations
-    run_init_project
-    run_server "$@"
-}
-
-is_master() {
-    echo "$@" | grep -q php-fpm
+    if [ "$IS_API_WORKER" = "true" ]; then
+        # This is the API worker, skip setup and just run the command
+        exec "$@"
+    else
+        # This is the API service, run full setup
+        prep_file_permissions
+        prep_storage
+        wait_for_db
+        apply_db_migrations
+        run_init_project
+        optimize_application
+        run_server "$@"
+    fi
 }
 
 prep_file_permissions() {
     chmod a+x ./artisan
 }
 
-apply_db_migrations() {
-    echo "Running DB Migrations"
-    ./artisan migrate
-}
+prep_storage() {
+    # Create Laravel-specific directories
+    mkdir -p /persist/storage/framework/cache/data
+    mkdir -p /persist/storage/framework/sessions
+    mkdir -p /persist/storage/framework/views
 
-run_init_project() {
-    echo "Running app:init-project command"
-    ./artisan app:init-project
+    # Set permissions for the entire storage directory
+    chown -R www-data:www-data /persist/storage
+    chmod -R 775 /persist/storage
+
+    # Create symlink to the correct storage location
+    ln -sf /persist/storage /usr/share/nginx/html/storage
+
+    touch /var/log/opnform.log
+    chown www-data /var/log/opnform.log
+
+    # Ensure proper permissions for the storage directory
+    chown -R www-data:www-data /usr/share/nginx/html/storage
+    chmod -R 775 /usr/share/nginx/html/storage
 }
 
 wait_for_db() {
@@ -34,30 +48,24 @@ wait_for_db() {
     done
 }
 
-run_server() {
-    echo "Starting server $@"
-    /usr/local/bin/docker-php-entrypoint "$@"
+apply_db_migrations() {
+    echo "Running DB Migrations"
+    ./artisan migrate --force
 }
 
-prep_storage() {
-    [ -L storage ] || {
-        echo "Backing up initial storage directory"
-        rm -rf /etc/initial-storage
-        mv ./storage /etc/initial-storage
-    }
+run_init_project() {
+    echo "Running app:init-project command"
+    ./artisan app:init-project
+}
 
-    [ -d /persist/storage ] || {
-        echo "Initialising blank storage dir"
-        mkdir -p /persist
-        cp -a /etc/initial-storage /persist/storage
-        chmod 777 -R /persist/storage
-    }
+optimize_application() {
+    echo "Optimizing application"
+    ./artisan optimize
+}
 
-    touch /var/log/opnform.log
-    chown www-data /var/log/opnform.log
-
-    echo "Linking persistent storage into app"
-    ln -t . -sf /persist/storage
+run_server() {
+    echo "Starting server $@"
+    exec "$@"
 }
 
 main "$@"

@@ -65,7 +65,7 @@
           <p
             class="mt-4 sm:mt-5 text-base leading-7 sm:text-xl sm:leading-9 font-medium text-gray-500"
           >
-            Create beautiful forms and share them anywhere. It super fast, you
+            Create beautiful forms and share them anywhere. It's super fast, you
             don't need to know how to code. Get started
             <span class="font-semibold">for free</span>!
           </p>
@@ -176,7 +176,7 @@
       <more-features class="pt-56" />
 
       <pricing-table
-        v-if="paidPlansEnabled"
+        v-if="useFeatureFlag('billing.enabled')"
         class="pb-20"
         :home-page="true"
       >
@@ -336,9 +336,6 @@ export default {
   computed: {
     configLinks() {
       return this.config.links
-    },
-    paidPlansEnabled() {
-      return this.runtimeConfig.public.paidPlansEnabled
     },
   },
 }

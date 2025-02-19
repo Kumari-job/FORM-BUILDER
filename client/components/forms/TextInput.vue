@@ -20,7 +20,7 @@
         theme.default.fontSize,
         {
           '!ring-red-500 !ring-2 !border-transparent': hasError,
-          '!cursor-not-allowed !bg-gray-200': disabled,
+          '!cursor-not-allowed !bg-gray-200 dark:!bg-gray-800': disabled,
         },
       ]"
       :name="name"
@@ -31,6 +31,8 @@
       :maxlength="maxCharLimit"
       @change="onChange"
       @keydown.enter.prevent="onEnterPress"
+      @focus="onFocus"
+      @blur="onBlur"
     >
 
     <template
@@ -74,7 +76,6 @@ export default {
     max: {type: Number, required: false, default: null},
     autocomplete: {type: [Boolean, String, Object], default: null},
     maxCharLimit: {type: Number, required: false, default: null},
-    showCharLimit: {type: Boolean, required: false, default: false},
     pattern: {type: String, default: null},
   },
 

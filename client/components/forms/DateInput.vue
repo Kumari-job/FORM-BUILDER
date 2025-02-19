@@ -46,7 +46,7 @@
           </div>
           <button
             v-if="fromDate && !props.disabled"
-            class="hover:bg-gray-50 dark:hover:bg-gray-900 border-l px-2 flex items-center"
+            class="hover:bg-gray-50 dark:hover:bg-gray-900 ltr:border-l rtl:border-r px-2 flex items-center"
             @click.prevent="clear()"
           >
             <Icon
@@ -59,7 +59,7 @@
         </div>
       </button>
 
-      <template #panel="{ close }">
+      <template #panel>
         <DatePicker
           v-if="props.dateRange"
           v-model.range="modeledValue"
@@ -71,7 +71,8 @@
           :max-date="maxDate"
           :is-dark="props.isDark"
           color="form-color"
-          @update:modelValue="updateModelValue"
+          :locale="props.locale"
+          @update:model-value="updateModelValue"
         />
         <DatePicker
           v-else
@@ -84,7 +85,8 @@
           :max-date="maxDate"
           :is-dark="props.isDark"
           color="form-color"
-          @update:modelValue="updateModelValue"
+          :locale="props.locale"
+          @update:model-value="updateModelValue"
         />
       </template>
     </UPopover>
@@ -152,11 +154,13 @@ const updateModelValue = () => {
 const inputClasses = computed(() => {
   const classes = [props.theme.DateInput.input, props.theme.DateInput.borderRadius]
   if (props.disabled) {
-    classes.push('!cursor-not-allowed dark:!bg-gray-600 !bg-gray-200')
+    classes.push('!cursor-not-allowed !bg-gray-200 dark:!bg-gray-800')
   }
   if (input.hasError.value) {
-
     classes.push('!ring-red-500 !ring-2 !border-transparent')
+  }
+  if (!props.disabled && !input.hasError.value && pickerOpen.value) {
+    classes.push('ring-2 ring-opacity-100 border-transparent')
   }
   return classes.join(' ')
 })
@@ -201,7 +205,7 @@ const formattedDate = (value) => {
     try {
       return format(new Date(value), props.dateFormat + (props.timeFormat == 12 ? ' p':' HH:mm'))
     } catch (e) {
-      console.log(e)
+      console.error('Error formatting date', e)
       return ''
     }
   }

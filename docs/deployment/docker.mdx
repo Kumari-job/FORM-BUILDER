@@ -1,0 +1,214 @@
+---
+title: "Docker Deployment"
+description: "Deploy OpnForm using Docker"
+---
+
+import CloudVersion from "/snippets/cloud-version.mdx";
+
+<CloudVersion/>
+
+<Tip>
+Looking to develop OpnForm locally? Check out our [Docker Development Setup](/deployment/docker-development) guide which provides hot-reload and other development features.
+</Tip>
+
+## Quick Start
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/JhumanJ/OpnForm.git
+   cd OpnForm
+   ```
+
+2. Run the setup script:
+   ```bash
+   chmod +x scripts/docker-setup.sh
+   ./scripts/docker-setup.sh
+   ```
+
+   The script will:
+   - Create necessary environment files
+   - Pull required Docker images
+   - Start all containers in production mode
+   - Display access information
+
+3. Access your OpnForm instance at `http://localhost`
+
+### Initial Login
+
+After deployment, use these credentials to access the app:
+
+-   Email: `admin@opnform.com`
+-   Password: `password`
+
+You will be prompted to change your email and password after your first login.
+
+<Note>Public registration is disabled in the self-hosted version. Use the admin account to invite additional users.</Note>
+
+## Architecture
+
+```mermaid
+graph TD
+    A[Nginx Proxy] --> B[Frontend - Nuxt SSR]
+    A --> C[Backend - Laravel API]
+    C --> D[PostgreSQL]
+    C --> E[Redis]
+    C --> F[Queue Worker]
+    C --> G[Scheduler]
+```
+
+### Components
+
+<Tabs>
+  <Tab title="Frontend">
+    The Nuxt frontend service:
+    - Server-Side Rendered application
+    - Built with Vue 3 and Tailwind CSS
+    - Handles dynamic rendering and client-side interactivity
+    - Optimized for production performance
+  </Tab>
+  <Tab title="Backend">
+    The Laravel API service:
+    - Handles business logic and data persistence
+    - Provides REST API endpoints
+    - Manages file uploads and processing
+    - Includes required PHP extensions (pgsql, redis, etc.)
+    - Configured for PostgreSQL and Redis connections
+  </Tab>
+  <Tab title="Workers">
+    Background processing services:
+    - **API Worker**: Processes queued jobs (emails, exports, etc.)
+    - **API Scheduler**: Handles scheduled tasks and periodic cleanups
+    - Both share the same codebase as the main API
+  </Tab>
+  <Tab title="Databases">
+    Data storage services:
+    - **PostgreSQL**: Primary database for all application data
+    - **Redis**: Used for:
+      - Session storage
+      - Cache
+      - Queue management
+      - Real-time features
+  </Tab>
+  <Tab title="Proxy">
+    The Nginx proxy service:
+    - Routes requests between frontend and backend
+    - Handles SSL termination
+    - Manages file upload limits
+    - Serves static assets
+    - Configured for optimal performance
+  </Tab>
+</Tabs>
+
+## Docker Images
+
+OpnForm provides pre-built Docker images for easy deployment:
+
+- [OpnForm API Image](https://hub.docker.com/r/jhumanj/opnform-api)
+- [OpnForm Client Image](https://hub.docker.com/r/jhumanj/opnform-client)
+
+### Building Custom Images
+
+While we recommend using the official images, you can build custom images if needed:
+
+```bash
+# Build all images
+docker compose build
+
+# Or build specific images
+docker build -t opnform-api:local -f docker/Dockerfile.api .
+docker build -t opnform-ui:local -f docker/Dockerfile.client .
+```
+
+### Custom Configuration
+Create a `docker-compose.override.yml` to customize your deployment:
+
+```yaml
+services:
+  api:
+    image: opnform-api:local
+    environment:
+      PHP_MEMORY_LIMIT: 1G
+  ui:
+    image: opnform-ui:local
+  ingress:
+    volumes:
+      - ./custom-nginx.conf:/etc/nginx/conf.d/default.conf
+```
+
+## Maintenance
+
+### Updates
+
+1. Pull latest changes:
+   ```bash
+   git pull origin main
+   ```
+
+2. Update containers:
+   ```bash
+   docker compose pull
+   docker compose up -d
+   ```
+
+### Monitoring
+
+View container logs:
+```bash
+# All containers
+docker compose logs -f
+
+# Specific container
+docker compose logs -f api
+```
+
+Monitor container health:
+```bash
+docker compose ps
+```
+
+## Troubleshooting
+
+### Container Issues
+
+If containers aren't starting:
+```bash
+# View detailed logs
+docker compose logs -f
+
+# Recreate containers
+docker compose down
+docker compose up -d
+```
+
+### Database Issues
+
+If database connections fail:
+```bash
+# Check database status
+docker compose exec db pg_isready
+
+# View database logs
+docker compose logs db
+```
+
+### Cache Issues
+
+Clear various caches:
+```bash
+# Clear application cache
+docker compose exec api php artisan cache:clear
+
+# Clear config cache
+docker compose exec api php artisan config:clear
+
+# Clear route cache
+docker compose exec api php artisan route:clear
+```
+
+### Permission Issues
+
+Fix storage permissions:
+```bash
+docker compose exec api chown -R www-data:www-data storage
+docker compose exec api chmod -R 775 storage
+```

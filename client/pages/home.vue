@@ -1,5 +1,8 @@
 <template>
-  <div class="bg-white">
+  <div
+    v-if="workspace"
+    class="bg-white"
+  >
     <div class="flex bg-gray-50 pb-5 border-b">
       <div class="w-full md:w-4/5 lg:w-3/5 md:mx-auto md:max-w-4xl p-4">
         <div class="pt-4 pb-0">
@@ -8,6 +11,7 @@
               Your Forms
             </h2>
             <v-button
+              v-if="!workspace?.is_readonly"
               v-track.create_form_click
               :to="{ name: 'forms-create' }"
             >
@@ -86,7 +90,7 @@
               again.
             </div>
             <v-button
-              v-if="forms.length === 0"
+              v-if="!workspace?.is_readonly && forms.length === 0"
               v-track.create_form_click
               class="mt-4"
               :to="{ name: 'forms-create' }"
@@ -181,32 +185,32 @@
               </div>
             </div>
             <div
-              v-if="!workspace.is_pro"
+              v-if="!workspace?.is_pro"
               class="px-4"
             >
               <UAlert
-                class="mt-4"
-                icon="i-heroicons-command-line"
+                class="mt-8 p-4"
+                icon="i-heroicons-sparkles"
                 color="primary"
                 variant="subtle"
                 description="You can add components to your app using the cli."
               >
                 <template #title>
-                  <h2 class="font-medium text-lg -mt-2">
+                  <h3 class="font-semibold text-md">
                     Discover our Pro plan
-                  </h2>
+                  </h3>
                 </template>
                 <template #description>
-                  <div class="flex flex-wrap sm:flex-nowrap gap-2 items-start">
+                  <div class="flex flex-wrap sm:flex-nowrap gap-4 items-start">
                     <p class="flex-grow">
-                      Remove NoteForms branding, customize forms further, use your custom domain, integrate with your
+                      Remove OpnForm branding, customize forms further, use your custom domain, integrate with your
                       favorite tools, invite users, and more!
                     </p>
                     <UButton
                       v-track.upgrade_banner_home_click
-                      :to="{name:'pricing'}"
                       color="white"
                       class="block"
+                      @click.prevent="subscriptionModalStore.openModal()"
                     >
                       Upgrade Now
                     </UButton>
@@ -246,6 +250,7 @@ useOpnSeoMeta({
     "All of your OpnForm are here. Create new forms, or update your existing forms.",
 })
 
+const subscriptionModalStore = useSubscriptionModalStore()
 const formsStore = useFormsStore()
 const workspacesStore = useWorkspacesStore()
 formsStore.startLoading()
@@ -274,7 +279,7 @@ const selectedTags = ref(new Set())
 
 const onTagClick = (tag) => {
   if (selectedTags?.value?.has(tag)) {
-    selectedTags.value.remove(tag)
+    selectedTags.value.delete(tag)
   } else {
     selectedTags.value.add(tag)
   }

@@ -10,7 +10,11 @@
       :class="[
         theme.SelectInput.input,
         theme.SelectInput.borderRadius,
-        { '!ring-red-500 !ring-2 !border-transparent': hasError, '!cursor-not-allowed !bg-gray-200': disabled },
+        { 
+          '!ring-red-500 !ring-2 !border-transparent': hasError, 
+          '!cursor-not-allowed !bg-gray-200 dark:!bg-gray-800': disabled,
+          'focus-within:ring-2 focus-within:ring-opacity-100 focus-within:border-transparent': !hasError && !disabled
+        },
         inputClass
       ]"
     >
@@ -19,17 +23,20 @@
         aria-haspopup="listbox"
         aria-expanded="true"
         aria-labelledby="listbox-label"
-        class="cursor-pointer w-full flex-grow relative"
+        class="cursor-pointer w-full flex-grow relative focus:outline-none"
         :class="[
           theme.SelectInput.spacing.horizontal,
           theme.SelectInput.spacing.vertical
         ]"
         @click="toggleDropdown"
+        @focus="onFocus"
+        @blur="onBlur"
       >
         <div
           class="flex items-center"
           :class="[
-            theme.SelectInput.minHeight
+            theme.SelectInput.minHeight,
+            'ltr:pr-8 rtl:pl-8'
           ]"
         >
           <transition
@@ -58,7 +65,7 @@
             >
               <slot name="placeholder">
                 <div
-                  class="text-gray-400 dark:text-gray-500 w-full text-left truncate pr-3"
+                  class="text-gray-400 dark:text-gray-500 w-full ltr:text-left rtl:!text-right truncate ltr:pr-3 rtl:pl-3 rtl:!pr-0"
                   :class="[
                     { 'py-1': multiple && !loading },
                     theme.SelectInput.fontSize
@@ -70,16 +77,23 @@
             </div>
           </transition>
         </div>
-        <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+        <div
+          class="absolute inset-y-0 ltr:right-6 rtl:left-6 w-10 pointer-events-none -z-[1]"
+          :class="[disabled ? 'bg-gradient-to-r from-transparent to-gray-200 dark:to-gray-800' : theme.SelectInput.chevronGradient]"
+        />
+        <span
+          class="absolute inset-y-0 ltr:right-0 rtl:left-0 rtl:!right-auto flex items-center ltr:pr-2 rtl:pl-2 rtl:!pr-0 pointer-events-none"
+          :class="[disabled ? 'bg-gray-200 dark:bg-gray-800' : theme.SelectInput.background]"
+        >
           <Icon
-            name="heroicons:chevron-up-down-16-solid"
+            name="heroicons:chevron-up-down-16-solid" 
             class="h-5 w-5 text-gray-500"
           />
         </span>
       </button>
       <button
-        v-if="clearable && !isEmpty"
-        class="hover:bg-gray-50 dark:hover:bg-gray-900 border-l px-2"
+        v-if="clearable && showClearButton && !disabled && !isEmpty"
+        class="hover:bg-gray-50 dark:hover:bg-gray-900 ltr:border-l rtl:!border-l-0 rtl:border-r px-2 flex items-center"
         :class="[theme.SelectInput.spacing.vertical]"
         @click.prevent="clear()"
       >
@@ -113,12 +127,12 @@
           <input
             v-model="searchTerm"
             type="text"
-            class="flex-grow pl-3 pr-7 py-2 w-full focus:outline-none dark:text-white"
-            placeholder="Search"
+            class="flex-grow ltr:pl-3 ltr:pr-7 rtl:!pr-3 rtl:pl-7 py-2 w-full focus:outline-none dark:text-white"
+            :placeholder="allowCreation ? $t('forms.select.searchOrTypeToCreateNew') : $t('forms.select.search')"
           >
           <div
             v-if="!searchTerm"
-            class="flex absolute right-0 inset-y-0 items-center px-2 justify-center pointer-events-none"
+            class="flex absolute ltr:right-0 rtl:left-0 rtl:!right-auto inset-y-0 items-center px-2 justify-center pointer-events-none"
           >
             <Icon
               name="heroicons:magnifying-glass-solid"
@@ -128,12 +142,12 @@
           <div
             v-else
             role="button"
-            class="flex absolute right-0 inset-y-0 items-center px-2 justify-center"
+            class="flex absolute ltr:right-0 rtl:!right-auto rtl:left-0 inset-y-0 items-center px-2 justify-center"
             @click="searchTerm = ''"
           >
             <Icon
               name="heroicons:backspace"
-              class="h-5 w-5 text-gray-500 dark:text-gray-400"
+              class="h-5 w-5 rtl:rotate-180 text-gray-500 dark:text-gray-400"
             />
           </div>
         </div>
@@ -173,7 +187,7 @@
           v-else-if="!loading && !(allowCreation && searchTerm)"
           class="w-full text-gray-500 text-center py-2"
         >
-          {{ (allowCreation ? 'Type something to add an option' : 'No option available') }}.
+          {{ (allowCreation ? $t('forms.select.typeSomethingToAddAnOption') : $t('forms.select.noOptionAvailable')) }}.
         </p>
         <div
           v-if="allowCreation && searchTerm"
@@ -186,7 +200,7 @@
             class="text-gray-900 select-none relative py-2 cursor-pointer group hover:bg-gray-100 dark:hover:bg-gray-900 rounded focus:outline-none"
             @click="createOption(searchTerm)"
           >
-            Create <span class="px-2 bg-gray-100 border border-gray-300 rounded group-hover-text-black">{{
+            {{ $t('forms.select.create') }} <span class="px-2 bg-gray-100 border border-gray-300 rounded group-hover-text-black">{{
               searchTerm
             }}</span>
           </li>
@@ -198,93 +212,95 @@
 
 <script>
 import Collapsible from '~/components/global/transitions/Collapsible.vue'
-import CachedDefaultTheme from "~/lib/forms/themes/CachedDefaultTheme.js"
 import debounce from 'debounce'
 import Fuse from 'fuse.js'
+import CachedDefaultTheme from '~/lib/forms/themes/CachedDefaultTheme.js'
 
 export default {
   name: 'VSelect',
-  components: {Collapsible},
+  components: { Collapsible },
   directives: {},
   props: {
     data: Array,
-    modelValue: {default: null, type: [String, Number, Array, Object]},
-    inputClass: {type: String, default: null},
-    dropdownClass: {type: String, default: 'w-full'},
-    loading: {type: Boolean, default: false},
-    required: {type: Boolean, default: false},
-    multiple: {type: Boolean, default: false},
-    searchable: {type: Boolean, default: false},
-    clearable: {type: Boolean, default: false},
-    hasError: {type: Boolean, default: false},
-    remote: {type: Function, default: null},
-    searchKeys: {type: Array, default: () => ['name']},
-    optionKey: {type: String, default: 'id'},
-    emitKey: {type: String, default: null},
-    color: {type: String, default: '#3B82F6'},
-    placeholder: {type: String, default: null},
-    uppercaseLabels: {type: Boolean, default: true},
+    modelValue: { default: null, type: [String, Number, Array, Object, Boolean] },
+    inputClass: { type: String, default: null },
+    dropdownClass: { type: String, default: 'w-full' },
+    loading: { type: Boolean, default: false },
+    required: { type: Boolean, default: false },
+    multiple: { type: Boolean, default: false },
+    searchable: { type: Boolean, default: false },
+    clearable: { type: Boolean, default: false },
+    hasError: { type: Boolean, default: false },
+    remote: { type: Function, default: null },
+    searchKeys: { type: Array, default: () => ['name'] },
+    optionKey: { type: String, default: 'id' },
+    emitKey: { type: String, default: null },
+    color: { type: String, default: '#3B82F6' },
+    placeholder: { type: String, default: null },
+    uppercaseLabels: { type: Boolean, default: true },
+    showClearButton: { type: Boolean, default: true },
     theme: {
       type: Object, default: () => {
-        const theme = inject("theme", null)
+        const theme = inject('theme', null)
         if (theme) {
           return theme.value
         }
         return CachedDefaultTheme.getInstance()
       }
     },
-    allowCreation: {type: Boolean, default: false},
-    disabled: {type: Boolean, default: false}
+    allowCreation: { type: Boolean, default: false },
+    disabled: { type: Boolean, default: false }
   },
-  emits: ['update:modelValue', 'update-options'],
-  data() {
+  emits: ['update:modelValue', 'update-options', 'focus', 'blur'],
+  data () {
     return {
       isOpen: false,
       searchTerm: '',
-      defaultValue: this.modelValue ?? null
+      defaultValue: this.modelValue ?? null,
+      isFocused: false
     }
   },
   computed: {
-    optionStyle() {
+    optionStyle () {
       return {
         '--bg-form-color': this.color
       }
     },
-    inputStyle() {
+    inputStyle () {
       return {
         '--tw-ring-color': this.color
       }
     },
-    debouncedRemote() {
+    debouncedRemote () {
       if (this.remote) {
         return debounce(this.remote, 300)
       }
       return null
     },
-    filteredOptions() {
+    filteredOptions () {
       if (!this.data) return []
       if (!this.searchable || this.remote || this.searchTerm === '') {
         return this.data
       }
 
       // Fuse search
-      const fuse = new Fuse(this.data, {
-        keys: this.searchKeys,
-        includeScore: true
-      })
-      return fuse.search(this.searchTerm).filter((res) => res.score < 0.5).map((res) => {
+      const fuzeOptions = {
+        keys: this.searchKeys
+      }
+      const fuse = new Fuse(this.data, fuzeOptions)
+      return fuse.search(this.searchTerm).map((res) => {
         return res.item
       })
     },
-    isSearchable() {
+    isSearchable () {
       return this.searchable || this.remote !== null || this.allowCreation
     },
-    isEmpty() {
+    isEmpty () {
       return this.multiple ? !this.modelValue || this.modelValue.length === 0 : !this.modelValue
     }
   },
   watch: {
-    searchTerm(val) {
+    searchTerm (val) {
       if (!this.debouncedRemote) return
       if ((this.remote && val) || (val === '' && !this.modelValue) || (val === '' && this.isOpen)) {
         return this.debouncedRemote(val)
@@ -292,13 +308,13 @@ export default {
     }
   },
   methods: {
-    onClickAway(event) {
+    onClickAway (event) {
       // Check that event target isn't children of dropdown
       if (this.$refs.select && !this.$refs.select.contains(event.target)) {
         this.isOpen = false
       }
     },
-    isSelected(value) {
+    isSelected (value) {
       if (!this.modelValue) return false
 
       if (this.emitKey && value[this.emitKey]) {
@@ -310,17 +326,34 @@ export default {
       }
       return this.modelValue === value
     },
-    toggleDropdown() {
+    onFocus(event) {
+      if (this.disabled) return
+      this.isFocused = true
+      this.$emit('focus', event)
+    },
+
+    onBlur(event) {
+      if (this.disabled) return
+      this.isFocused = false
+      this.$emit('blur', event)
+    },
+
+    toggleDropdown () {
       if (this.disabled) {
         this.isOpen = false
       } else {
         this.isOpen = !this.isOpen
+        if (this.isOpen) {
+          this.onFocus()
+        } else {
+          this.onBlur()
+        }
       }
       if (!this.isOpen) {
         this.searchTerm = ''
       }
     },
-    select(value) {
+    select (value) {
       if (!this.multiple) {
         // Close after select
         this.toggleDropdown()
@@ -334,29 +367,31 @@ export default {
         const emitValue = Array.isArray(this.modelValue) ? [...this.modelValue] : []
 
         if (this.isSelected(value)) {
-          this.$emit('update:modelValue', emitValue.filter((item) => {
-            if (this.emitKey) {
-              return item !== value
-            }
-            return item[this.optionKey] !== value && item[this.optionKey] !== value[this.optionKey]
-          }))
+          // Only remove if clearable or not the last item
+          if (this.clearable || emitValue.length > 1) {
+            this.$emit('update:modelValue', emitValue.filter((item) => {
+              if (this.emitKey) {
+                return item !== value
+              }
+              return item[this.optionKey] !== value && item[this.optionKey] !== value[this.optionKey]
+            }))
+          }
           return
         }
 
         emitValue.push(value)
         this.$emit('update:modelValue', emitValue)
       } else {
-        if (this.modelValue === value) {
-          this.$emit('update:modelValue', this.defaultValue ?? null)
-        } else {
-          this.$emit('update:modelValue', value)
+        // For single select, only change value if it's different or clearable
+        if (this.modelValue !== value || this.clearable) {
+          this.$emit('update:modelValue', this.modelValue === value && this.clearable ? null : value)
         }
       }
     },
-    clear() {
+    clear () {
       this.$emit('update:modelValue', this.multiple ? [] : null)
     },
-    createOption(newOption) {
+    createOption (newOption) {
       if (newOption) {
         const newItem = {
           name: newOption,
@@ -371,3 +406,4 @@ export default {
   }
 }
 </script>
+

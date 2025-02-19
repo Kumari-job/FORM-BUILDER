@@ -149,7 +149,7 @@
                     v-else
                     class="mr-1"
                     :arrow="true"
-                    @click.prevent="openCustomerCheckout('default')"
+                    @click.prevent="subscriptionModalStore.openModal('default', isYearly)"
                   >
                     Start free trial
                   </v-button>
@@ -168,13 +168,9 @@
       </div>
     </section>
 
-    <custom-plan v-if="!homePage" />
-
-    <checkout-details-modal
-      :show="showDetailsModal"
-      :yearly="isYearly"
-      :plan="selectedPlan"
-      @close="showDetailsModal = false"
+    <custom-plan
+      v-if="!homePage"
+      class="mt-8"
     />
   </div>
 </template>
@@ -183,7 +179,6 @@
 import { computed } from "vue"
 import { useAuthStore } from "../../../stores/auth"
 import MonthlyYearlySelector from "./MonthlyYearlySelector.vue"
-import CheckoutDetailsModal from "./CheckoutDetailsModal.vue"
 import CustomPlan from "./CustomPlan.vue"
 
 MonthlyYearlySelector.compatConfig = { MODE: 3 }
@@ -191,7 +186,6 @@ MonthlyYearlySelector.compatConfig = { MODE: 3 }
 export default {
   components: {
     MonthlyYearlySelector,
-    CheckoutDetailsModal,
     CustomPlan,
   },
   props: {
@@ -201,17 +195,16 @@ export default {
     },
   },
   setup() {
+    const subscriptionModalStore = useSubscriptionModalStore()
     const authStore = useAuthStore()
     return {
+      subscriptionModalStore,
       authenticated: computed(() => authStore.check),
       user: computed(() => authStore.user),
     }
   },
   data: () => ({
     isYearly: true,
-    selectedPlan: "pro",
-    showDetailsModal: false,
-
     pricingInfo: [
       "Form confirmation emails",
       "Slack notifications",
@@ -222,16 +215,14 @@ export default {
       "Larger file uploads (50mb)",
       "Remove OpnForm branding",
       "Priority support",
+      "Form Analytics",
+      "Custom sender email (SMTP)"
     ],
   }),
 
   computed: {},
 
   methods: {
-    openCustomerCheckout(plan) {
-      this.selectedPlan = plan
-      this.showDetailsModal = true
-    },
     openBilling() {
       this.billingLoading = true
       opnFetch("/subscription/billing-portal").then((data) => {

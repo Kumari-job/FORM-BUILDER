@@ -47,7 +47,7 @@ import { computed } from "vue"
 import { useAuthStore } from "../stores/auth"
 
 definePageMeta({
-  middleware: "auth",
+  middleware: ["auth", "self-hosted-credentials"],
 })
 
 useOpnSeoMeta({
@@ -56,6 +56,7 @@ useOpnSeoMeta({
 
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
+const workspace = computed(() => useWorkspacesStore().getCurrent)
 const tabsList = computed(() => {
   const tabs = [
     {
@@ -66,14 +67,16 @@ const tabsList = computed(() => {
       name: "Workspace Settings",
       route: "settings-workspace",
     },
-    {
-      name: "Access Tokens",
-      route: "settings-access-tokens",
-    },
-    {
-      name: "Connections",
-      route: "settings-connections",
-    },
+    ...workspace.value.is_readonly ? [] : [
+      {
+        name: "Access Tokens",
+        route: "settings-access-tokens",
+      },
+      {
+        name: "Connections",
+        route: "settings-connections",
+      },
+    ],
     {
       name: "Password",
       route: "settings-password",
@@ -84,7 +87,7 @@ const tabsList = computed(() => {
     },
   ]
 
-  if (user?.value?.is_subscribed) {
+  if (user?.value?.has_customer_id) {
     tabs.splice(1, 0, {
       name: "Billing",
       route: "settings-billing",
